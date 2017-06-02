@@ -69,23 +69,15 @@ void TerrainBlock::generate(glm::vec2 start, glm::vec2 end, glm::vec2 mapSize, f
 	//
 	//Note: We can't use <= in the loop above as
 	//		with a custom modifier it might never = mapSize.x
-	if (end.x == mapSize.x)
-	{
-		glm::vec2 yRange = glm::vec2(start.y, end.y);
-		addCol(end.x, yRange, mapSize, radius, lod);
-	}
+
+	glm::vec2 yRange = glm::vec2(start.y, end.y);
+	addCol(end.x, yRange, mapSize, radius, lod);
+	
 
 
 	glm::vec2 length = glm::ceil((end - start) / glm::vec2(lod, lod));
-	if (end.x == mapSize.x)
-	{
-		length.x += 1;
-	}
-
-	if (end.y == mapSize.y)
-	{
-		length.y += 1;
-	}
+	length.x += 1;
+	length.y += 1;
 
 	for (int i = 0; i < length.x-1; i++) 
 	{
@@ -140,9 +132,9 @@ void TerrainBlock::addCol(int xValue, glm::vec2 yRange, glm::vec2 mapSize, float
 		//We want to perform one last vertex addition as the sphere
 		//cannot generate properly unless mapSize.y is included in 
 		//the range of vertices
-		if (y >= mapSize.y)
+		if (y >= yRange.y)
 		{
-			coords = mapCartesianToSpherical(glm::vec2(xValue, mapSize.y), mapSize, radius);
+			coords = mapCartesianToSpherical(glm::vec2(xValue, yRange.y), mapSize, radius);
 			vertices.push_back(coords);
 			vertices.push_back(coords);
 		}

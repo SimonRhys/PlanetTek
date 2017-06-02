@@ -72,8 +72,8 @@ void Planet::generate()
 
 	glm::vec2 centre(3, 3);
 
-	glm::vec2 mapSize(1000, 1000);
-	glm::vec2 chunkSize(50, 50);
+	glm::vec2 mapSize(2000, 2000);
+	glm::vec2 chunkSize(100, 100);
 
 	for (int i = 0; i < 7; i++)
 	{

@@ -30,12 +30,15 @@ GLfloat WIDTH = 800, HEIGHT = 600;
 GLfloat ASPECT = WIDTH / HEIGHT;
 
 bool KEYS[1024];
+glm::vec2 LAST_MOUSE_POS(WIDTH/2, HEIGHT/2);
 
-float SPEED = 100.0f;
+float SPEED = 1000.0f;
 float ROTATE_SPEED = 5.0f;
-float CAMERA_ROTATION = 0;
+float MOUSE_ROTATE_SPEED = 0.01;
+float PLANET_RADIUS = 10000;
 
-glm::vec3 CAMERA = glm::vec3(0, 0, 0);
+glm::vec3 CAMERA = glm::vec3(-PLANET_RADIUS, -PLANET_RADIUS/2, -PLANET_RADIUS/2);
+glm::vec2 CAMERA_ROTATION(0, -PI / 2);
 
 std::map<std::string, GLuint> UNIFORM_LOCATIONS;
 
@@ -43,7 +46,8 @@ std::map<std::string, GLuint> UNIFORM_LOCATIONS;
 
 void handleControls(GLfloat dt);
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mode);
-void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
+void mouseCallback(GLFWwindow* window, double xpos, double ypos);
+void windowFocusCallback(GLFWwindow* window, int focus);
 void resizeWindow(GLFWwindow* window, int width, int height);
 
 float round(float f, int numPlaces);
@@ -65,13 +69,16 @@ int main()
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
 
+
 	//Create a GLFWwindow object that we can use for GLFW's functions
-	GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "OpenGL", nullptr, nullptr);
+	GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "PlanetTek", nullptr, nullptr);
 	glfwMakeContextCurrent(window);
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 	//Set the required callback functions
 	glfwSetKeyCallback(window, keyCallback);
-	glfwSetMouseButtonCallback(window, mouseButtonCallback);
+	glfwSetCursorPosCallback(window, mouseCallback);
+	glfwSetWindowFocusCallback(window, windowFocusCallback);
 	glfwSetWindowSizeCallback(window, resizeWindow);
 
 	glfwShowWindow(window);
@@ -93,7 +100,7 @@ int main()
 	GLfloat lastFrame = glfwGetTime();
 	GLfloat dt = glfwGetTime();
 
-	Planet planet = Planet(1000);
+	Planet planet = Planet(PLANET_RADIUS);
 	planet.setPlayerCamera(&CAMERA);
 
 	//Window loop
@@ -115,8 +122,9 @@ int main()
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		//Setup the Projection and View matricies
-		glm::mat4 projection = glm::perspective(45.0f, ASPECT, 1.0f, 1000.0f);
-		glm::mat4 view = glm::rotate(CAMERA_ROTATION, glm::vec3(0, 1, 0));
+		glm::mat4 projection = glm::perspective(45.0f, ASPECT, 1.0f, 10000.0f);
+		glm::mat4 view = glm::rotate(CAMERA_ROTATION.x, glm::vec3(1, 0, 0));
+		view = view * glm::rotate(CAMERA_ROTATION.y, glm::vec3(0, 1, 0));
 		view = view * glm::translate(CAMERA);
 		planet.draw(projection, view);
 
@@ -135,33 +143,33 @@ void handleControls(GLfloat dt)
 {
 	if (KEYS[GLFW_KEY_W])
 	{
-		CAMERA.z += glm::cos(CAMERA_ROTATION) * SPEED * dt;
-		CAMERA.x -= glm::sin(CAMERA_ROTATION) * SPEED * dt;
+		CAMERA.z += glm::cos(CAMERA_ROTATION.y) * SPEED * dt;
+		CAMERA.x -= glm::sin(CAMERA_ROTATION.y) * SPEED * dt;
 	}
 	else if (KEYS[GLFW_KEY_S])
 	{
-		CAMERA.z -= glm::cos(CAMERA_ROTATION) * SPEED * dt;
-		CAMERA.x += glm::sin(CAMERA_ROTATION) * SPEED * dt;
+		CAMERA.z -= glm::cos(CAMERA_ROTATION.y) * SPEED * dt;
+		CAMERA.x += glm::sin(CAMERA_ROTATION.y) * SPEED * dt;
 	}
 
 	if (KEYS[GLFW_KEY_A])
 	{
-		CAMERA.z += glm::sin(CAMERA_ROTATION) * SPEED * dt;
-		CAMERA.x += glm::cos(CAMERA_ROTATION) * SPEED * dt;
+		CAMERA.z += glm::sin(CAMERA_ROTATION.y) * SPEED * dt;
+		CAMERA.x += glm::cos(CAMERA_ROTATION.y) * SPEED * dt;
 	}
 	else if (KEYS[GLFW_KEY_D])
 	{
-		CAMERA.z -= glm::sin(CAMERA_ROTATION) * SPEED * dt;
-		CAMERA.x -= glm::cos(CAMERA_ROTATION) * SPEED * dt;
+		CAMERA.z -= glm::sin(CAMERA_ROTATION.y) * SPEED * dt;
+		CAMERA.x -= glm::cos(CAMERA_ROTATION.y) * SPEED * dt;
 	}
 
 	if (KEYS[GLFW_KEY_RIGHT])
 	{
-		CAMERA_ROTATION += ROTATE_SPEED * dt;
+		CAMERA_ROTATION.y += ROTATE_SPEED * dt;
 	}
 	else if (KEYS[GLFW_KEY_LEFT])
 	{
-		CAMERA_ROTATION -= ROTATE_SPEED * dt;
+		CAMERA_ROTATION.y -= ROTATE_SPEED * dt;
 	}
 
 	if (KEYS[GLFW_KEY_SPACE])
@@ -199,8 +207,30 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mode
 	}
 }
 
-void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
+void mouseCallback(GLFWwindow* window, double xpos, double ypos)
 {
+	glm::vec2 newMousePos(xpos, ypos);
+	glm::vec2 diff = LAST_MOUSE_POS - newMousePos;
+
+	CAMERA_ROTATION.y -= diff.x*MOUSE_ROTATE_SPEED;
+	CAMERA_ROTATION.x -= diff.y*MOUSE_ROTATE_SPEED;
+
+	CAMERA_ROTATION.x = glm::min(PI / 2, (double)CAMERA_ROTATION.x);
+	CAMERA_ROTATION.x = glm::max(-PI / 2, (double)CAMERA_ROTATION.x);
+
+	LAST_MOUSE_POS = newMousePos;
+}
+
+void windowFocusCallback(GLFWwindow* window, int focus)
+{
+	if (focus)
+	{
+		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	}
+	else
+	{
+		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+	}
 }
 
 void resizeWindow(GLFWwindow* window, int width, int height)
