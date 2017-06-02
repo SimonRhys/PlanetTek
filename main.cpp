@@ -1,6 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <map>
+#include <time.h>
 
 // GLEW
 #define GLEW_STATIC
@@ -18,7 +19,6 @@
 
 //SOIL
 #include <SOIL/SOIL.h>
-
 
 #include "Shader.h"
 #include "Planet.h"
@@ -90,6 +90,8 @@ int main()
 		std::cout << "Failed to initialize GLEW\n";
 		return -1;
 	}
+
+	srand(time(NULL));
 
 	//Define the viewport dimensions
 	glViewport(0, 0, WIDTH, HEIGHT);
