@@ -21,8 +21,10 @@
 
 
 #include "Shader.h"
+#include "Planet.h"
 
 #define PI 3.14159265358979323846
+#define TWO_PI 6.28318530717958647693
 
 GLfloat WIDTH = 800, HEIGHT = 600;
 GLfloat ASPECT = WIDTH / HEIGHT;
@@ -86,65 +88,13 @@ int main()
 	glViewport(0, 0, WIDTH, HEIGHT);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-	Shader shader;
-	shader.createShader("vert.sh", GL_VERTEX_SHADER);
-	shader.createShader("frag.sh", GL_FRAGMENT_SHADER);
-	shader.createProgram();
-
-	UNIFORM_LOCATIONS["projection"] = glGetUniformLocation(shader.getShaderProgram(), "projection");
-	UNIFORM_LOCATIONS["view"] = glGetUniformLocation(shader.getShaderProgram(), "view");
-
-	Shader *currShader = &shader;
-
-	std::vector<glm::vec3> vertices;
-
-	vertices.push_back(glm::vec3(-25, 25, -50));
-	vertices.push_back(glm::vec3(-1, -1, -1));
-
-	vertices.push_back(glm::vec3(25, 25, -50));
-	vertices.push_back(glm::vec3(-1, -1, -1));
-
-	vertices.push_back(glm::vec3(-25, -25, -50));
-	vertices.push_back(glm::vec3(-1, -1, -1));
-
-	vertices.push_back(glm::vec3(25, -25, -50));
-	vertices.push_back(glm::vec3(-1, -1, -1));
-
-
-	std::vector<GLuint> indices;
-
-	indices.push_back(0);
-	indices.push_back(2);
-	indices.push_back(1);
-
-	indices.push_back(1);
-	indices.push_back(2);
-	indices.push_back(3);
-
-	GLuint vao;
-	GLuint vbo;
-	GLuint ebo;
-	GLuint texture;
-	glGenVertexArrays(1, &vao);
-	glGenBuffers(1, &vbo);
-	glGenBuffers(1, &ebo);
-	glBindVertexArray(vao);
-	glGenTextures(1, &texture);
-
-	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), &vertices[0], GL_DYNAMIC_DRAW);
-
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 2 * sizeof(glm::vec3), (GLvoid*)0);
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 2 * sizeof(glm::vec3), (GLvoid*)(1 * sizeof(glm::vec3)));
-	glEnableVertexAttribArray(1);
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), &indices[0], GL_DYNAMIC_DRAW);
+	glEnable(GL_DEPTH_TEST);
 
 	GLfloat lastFrame = glfwGetTime();
 	GLfloat dt = glfwGetTime();
+
+	Planet planet = Planet(1000);
+	planet.setPlayerCamera(&CAMERA);
 
 	//Window loop
 	while (!glfwWindowShouldClose(window))
@@ -158,30 +108,22 @@ int main()
 		glfwPollEvents();
 		handleControls(dt);
 
+		planet.update(dt);
+
 		// Clear the colorbuffer
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		glUseProgram(currShader->getShaderProgram());
-		glBindTexture(GL_TEXTURE_2D, texture);
-
-		glBindVertexArray(vao);
+		//Setup the Projection and View matricies
 		glm::mat4 projection = glm::perspective(45.0f, ASPECT, 1.0f, 1000.0f);
 		glm::mat4 view = glm::rotate(CAMERA_ROTATION, glm::vec3(0, 1, 0));
 		view = view * glm::translate(CAMERA);
-		glUniformMatrix4fv(UNIFORM_LOCATIONS["projection"], 1, GL_FALSE, glm::value_ptr(projection));
-		glUniformMatrix4fv(UNIFORM_LOCATIONS["view"], 1, GL_FALSE, glm::value_ptr(view));
+		planet.draw(projection, view);
 
-		glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
-		glBindVertexArray(0);
 
 		//Swap the screen buffers
 		glfwSwapBuffers(window);
 	}
-	//Properly de-allocate all resources once they've outlived their purpose
-	glDeleteVertexArrays(1, &vao);
-	glDeleteBuffers(1, &vbo);
-	glDeleteBuffers(1, &ebo);
 
 	//Terminate GLFW, clearing any resources allocated by GLFW.
 	glfwTerminate();
