@@ -44,19 +44,6 @@ void Planet::setPlayerCamera(glm::vec3 *playerCamera)
 
 void Planet::update(float dt)
 {
-	float distance = glm::distance(*playerCamera, glm::vec3(0, 0, 0));
-	if (distance < 2 * radius)
-	{
-		LODQuality = LOD_QUALITY::HIGH;
-	}
-	else if(distance < 4 * radius)
-	{
-		LODQuality = LOD_QUALITY::MEDIUM;
-	}
-	else
-	{
-		LODQuality = LOD_QUALITY::LOW;
-	}
 }
 
 Planet::~Planet()
