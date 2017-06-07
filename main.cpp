@@ -35,9 +35,9 @@ glm::vec2 LAST_MOUSE_POS(WIDTH/2, HEIGHT/2);
 float SPEED = 1000.0f;
 float ROTATE_SPEED = 5.0f;
 float MOUSE_ROTATE_SPEED = 0.01;
-float PLANET_RADIUS = 10000;
+float PLANET_RADIUS = 100000;
 
-glm::vec3 CAMERA = glm::vec3(-PLANET_RADIUS, -PLANET_RADIUS/2, -PLANET_RADIUS/2);
+glm::vec3 CAMERA = glm::vec3(-40486, -12120, -90630);
 glm::vec2 CAMERA_ROTATION(0, -PI / 2);
 
 std::map<std::string, GLuint> UNIFORM_LOCATIONS;
@@ -98,11 +98,12 @@ int main()
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable(GL_DEPTH_TEST);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 	GLfloat lastFrame = glfwGetTime();
 	GLfloat dt = glfwGetTime();
 
-	Planet planet = Planet(PLANET_RADIUS);
+	Planet planet = Planet(PLANET_RADIUS, "mapbig.png");
 	planet.setPlayerCamera(&CAMERA);
 
 	//Window loop

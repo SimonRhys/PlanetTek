@@ -16,7 +16,6 @@ void TerrainBlock::create(Shader *shader, std::map<std::string, GLuint> *uniform
 
 	this->shader = shader;
 	this->uniformLocations = uniformLocations;
-	this->inUse = true;
 }
 
 void TerrainBlock::draw(glm::mat4 proj, glm::mat4 view, float radius, int lod)
@@ -32,8 +31,8 @@ void TerrainBlock::draw(glm::mat4 proj, glm::mat4 view, float radius, int lod)
 	glUniformMatrix4fv(uniformLocations->at("view"), 1, GL_FALSE, glm::value_ptr(view));
 	glUniformMatrix4fv(uniformLocations->at("model"), 1, GL_FALSE, glm::value_ptr(glm::mat4(1)));
 
-	glUniform3f(uniformLocations->at("lightPos"), -radius*1.5, radius*1.5, radius*1.5);
-	glUniform3f(uniformLocations->at("lightColor"), 1.0f, 0.0f, 0.0f);
+	glUniform3f(uniformLocations->at("lightPos"), -10000*1.5, 10000*1.5, 10000*1.5);
+	glUniform3f(uniformLocations->at("lightColor"), 0.5f, 0.5f, 0.5f);
 	glUniform3f(uniformLocations->at("objectColor"), 1.0f, 1.0f, 1.0f);
 
 	if (lod > 4)
@@ -53,15 +52,39 @@ void TerrainBlock::draw(glm::mat4 proj, glm::mat4 view, float radius, int lod)
 	glUseProgram(0);
 }
 
-void TerrainBlock::generate(glm::vec2 start, glm::vec2 end, glm::vec2 mapSize, float radius, int lod)
+void TerrainBlock::generate(glm::vec2 start, glm::vec2 end, Heightmap *heightmap, float radius, int lod)
 {
+	this->inUse = false;
+
+
 	vertices.clear();
 	indices.clear();
+
+	if (start.x >= heightmap->getWidth())
+	{
+		return;
+	}
+
+	if (start.y >= heightmap->getHeight())
+	{
+		return;
+	}
+
+	if (end.x > heightmap->getWidth())
+	{
+		end.x = heightmap->getWidth();
+	}
+
+	if (end.y > heightmap->getHeight())
+	{
+		end.y = heightmap->getHeight();
+	}
+
 
 	for (int x = start.x; x < end.x; x += lod)
 	{
 		glm::vec2 yRange = glm::vec2(start.y, end.y);
-		addCol(x, yRange, mapSize, radius, lod);
+		addCol(x, yRange, heightmap, radius, lod);
 	}
 
 	//Need to add an extra row at the end
@@ -71,24 +94,24 @@ void TerrainBlock::generate(glm::vec2 start, glm::vec2 end, glm::vec2 mapSize, f
 	//		with a custom modifier it might never = mapSize.x
 
 	glm::vec2 yRange = glm::vec2(start.y, end.y);
-	addCol(end.x, yRange, mapSize, radius, lod);
-	
+	addCol(end.x, yRange, heightmap, radius, lod);
+
 
 
 	glm::vec2 length = glm::ceil((end - start) / glm::vec2(lod, lod));
 	length.x += 1;
 	length.y += 1;
 
-	for (int i = 0; i < length.x-1; i++) 
+	for (int i = 0; i < length.x - 1; i++)
 	{
-		for (int j = 0; j < length.y-1; j++) 
+		for (int j = 0; j < length.y - 1; j++)
 		{
 			indices.push_back(i*length.y + j);
 			indices.push_back((i + 1)*length.y + j);
 			indices.push_back(i*length.y + j + 1);
 
-			indices.push_back(i*length.y + j + 1);
 			indices.push_back((i + 1)*length.y + j);
+			indices.push_back(i*length.y + j + 1);
 			indices.push_back((i + 1)*length.y + j + 1);
 		}
 	}
@@ -108,6 +131,7 @@ void TerrainBlock::generate(glm::vec2 start, glm::vec2 end, glm::vec2 mapSize, f
 
 	glBindVertexArray(0);
 
+	this->inUse = true;
 }
 
 TerrainBlock::~TerrainBlock()
@@ -118,12 +142,12 @@ TerrainBlock::~TerrainBlock()
 }
 
 //Private
-void TerrainBlock::addCol(int xValue, glm::vec2 yRange, glm::vec2 mapSize, float radius, int lod)
+void TerrainBlock::addCol(int xValue, glm::vec2 yRange, Heightmap *heightmap, float radius, int lod)
 {
 	int y = yRange.x;
 	while (y < yRange.y)
 	{
-		glm::vec3 coords = mapCartesianToSpherical(glm::vec2(xValue, y), mapSize, radius);
+		glm::vec3 coords = mapCartesianToSpherical(glm::vec2(xValue, y), heightmap, radius+heightmap->get(xValue, y));
 		vertices.push_back(coords);
 		vertices.push_back(coords);
 
@@ -134,23 +158,24 @@ void TerrainBlock::addCol(int xValue, glm::vec2 yRange, glm::vec2 mapSize, float
 		//the range of vertices
 		if (y >= yRange.y)
 		{
-			coords = mapCartesianToSpherical(glm::vec2(xValue, yRange.y), mapSize, radius);
+			coords = mapCartesianToSpherical(glm::vec2(xValue, yRange.y), heightmap, radius+heightmap->get(xValue, yRange.y));
 			vertices.push_back(coords);
 			vertices.push_back(coords);
 		}
 	}
 }
 
-glm::vec3 TerrainBlock::mapCartesianToSpherical(glm::vec2 coords, glm::vec2 mapSize, float radius)
+glm::vec3 TerrainBlock::mapCartesianToSpherical(glm::vec2 coords, Heightmap *heightmap, float radius)
 {
-	float thetaDelta = PI / mapSize.x;
-	float phiDelta = TWO_PI / mapSize.y;
+	float thetaDelta = PI / heightmap->getHeight();
+	float phiDelta = TWO_PI / heightmap->getWidth();
 	float theta = coords.y * thetaDelta;
 	float phi = coords.x * phiDelta;
-
+	
 	glm::vec3 coords2;
 	coords2.x = radius * glm::sin(theta) * glm::cos(phi);
 	coords2.y = radius * glm::sin(theta) * glm::sin(phi);
 	coords2.z = radius * glm::cos(theta);
+
 	return coords2;
 }

@@ -5,8 +5,10 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <SOIL/SOIL.h>
 #include "Shader.h"
 #include "TerrainBlock.h"
+#include "Heightmap.h"
 
 #define PI 3.14159265358979323846
 #define TWO_PI 6.28318530717958647693
@@ -21,6 +23,7 @@ public:
 	enum class LOD_QUALITY { HIGH, MEDIUM, LOW };
 
 	Planet(float radius);
+	Planet(float radius, std::string heightmapFP);
 	~Planet();
 
 	void draw(glm::mat4 proj, glm::mat4 view);
@@ -29,6 +32,7 @@ public:
 
 
 private:
+	void createShaderProgram();
 	void generate();
 
 	float radius;
@@ -38,6 +42,8 @@ private:
 	const static int MAX_TERRAIN_BLOCKS_LQ = 25;
 	const static int CHUNK_SIZE = 100;
 	const static int LOD = 100;
+
+	Heightmap heightmap;
 
 
 

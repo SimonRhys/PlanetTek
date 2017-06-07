@@ -2,22 +2,21 @@
 
 
 //Public
-Planet::Planet(float radius=100)
+Planet::Planet(float radius)
 {
 	this->radius = radius;
-
-	shader.createShader("planetVert.sh", GL_VERTEX_SHADER);
-	shader.createShader("planetFrag.sh", GL_FRAGMENT_SHADER);
-	shader.createProgram();
-
-	uniformLocations["projection"] = glGetUniformLocation(shader.getShaderProgram(), "projection");
-	uniformLocations["view"] = glGetUniformLocation(shader.getShaderProgram(), "view");
-	uniformLocations["model"] = glGetUniformLocation(shader.getShaderProgram(), "model");
-	uniformLocations["lightPos"] = glGetUniformLocation(shader.getShaderProgram(), "lightPos");
-	uniformLocations["lightColor"] = glGetUniformLocation(shader.getShaderProgram(), "lightColor");
-	uniformLocations["objectColor"] = glGetUniformLocation(shader.getShaderProgram(), "objectColor");
-
+	heightmap.create(512, 512);
+	this->createShaderProgram();
 	this->generate();
+}
+
+Planet::Planet(float radius, std::string heightmapFP)
+{
+	this->radius = radius;
+	heightmap.load(heightmapFP);
+	this->createShaderProgram();
+	this->generate();
+	
 }
 
 void Planet::draw(glm::mat4 proj, glm::mat4 view) 
@@ -51,6 +50,33 @@ Planet::~Planet()
 }
 
 //Private
+void Planet::createShaderProgram()
+{
+	shader.createShader("planetVert.sh", GL_VERTEX_SHADER);
+	shader.createShader("planetFrag.sh", GL_FRAGMENT_SHADER);
+	shader.createProgram();
+
+	uniformLocations["projection"] = glGetUniformLocation(shader.getShaderProgram(), "projection");
+	uniformLocations["view"] = glGetUniformLocation(shader.getShaderProgram(), "view");
+	uniformLocations["model"] = glGetUniformLocation(shader.getShaderProgram(), "model");
+	uniformLocations["lightPos"] = glGetUniformLocation(shader.getShaderProgram(), "lightPos");
+	uniformLocations["lightColor"] = glGetUniformLocation(shader.getShaderProgram(), "lightColor");
+	uniformLocations["objectColor"] = glGetUniformLocation(shader.getShaderProgram(), "objectColor");
+
+	for (int i = 0; i < MAX_TERRAIN_BLOCKS_HQ; i++)
+	{
+		terrainBlocksHQ[i].create(&shader, &uniformLocations);
+	}
+	for (int i = 0; i < MAX_TERRAIN_BLOCKS_MQ; i++)
+	{
+		terrainBlocksMQ[i].create(&shader, &uniformLocations);
+	}
+	for (int i = 0; i < MAX_TERRAIN_BLOCKS_LQ; i++)
+	{
+		terrainBlocksLQ[i].create(&shader, &uniformLocations);
+	}
+}
+
 void Planet::generate() 
 {
 	int blockCountHQ = 0;
@@ -59,7 +85,7 @@ void Planet::generate()
 
 	glm::vec2 centre(3, 3);
 
-	glm::vec2 mapSize(2000, 2000);
+	glm::vec2 mapSize(heightmap.getWidth(), heightmap.getHeight());
 	glm::vec2 chunkSize(100, 100);
 
 	for (int i = 0; i < 7; i++)
@@ -74,22 +100,19 @@ void Planet::generate()
 
 			if (distanceFromCentre == 3)
 			{
-				terrainBlocksLQ[blockCountLQ].create(&shader, &uniformLocations);
-				terrainBlocksLQ[blockCountLQ].generate(start, end, mapSize, radius, 10);
+				terrainBlocksLQ[blockCountLQ].generate(start, end, &heightmap, radius, 10);
 
 				blockCountLQ++;
 			}
 			else if (distanceFromCentre == 2)
 			{
-				terrainBlocksMQ[blockCountMQ].create(&shader, &uniformLocations);
-				terrainBlocksMQ[blockCountMQ].generate(start, end, mapSize, radius, 5);
+				terrainBlocksMQ[blockCountMQ].generate(start, end, &heightmap, radius, 5);
 
 				blockCountMQ++;
 			}
 			else if (distanceFromCentre <= 1) {
 
-				terrainBlocksHQ[blockCountHQ].create(&shader, &uniformLocations);
-				terrainBlocksHQ[blockCountHQ].generate(start, end, mapSize, radius, 1);
+				terrainBlocksHQ[blockCountHQ].generate(start, end, &heightmap, radius, 1);
 				blockCountHQ++;
 			}
 		}
