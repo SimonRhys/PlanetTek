@@ -125,7 +125,7 @@ int main()
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		//Setup the Projection and View matricies
-		glm::mat4 projection = glm::perspective(45.0f, ASPECT, 1.0f, 10000.0f);
+		glm::mat4 projection = glm::perspective(45.0f, ASPECT, 1.0f, 100000.0f);
 		glm::mat4 view = glm::rotate(CAMERA_ROTATION.x, glm::vec3(1, 0, 0));
 		view = view * glm::rotate(CAMERA_ROTATION.y, glm::vec3(0, 1, 0));
 		view = view * glm::translate(CAMERA);
