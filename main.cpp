@@ -26,6 +26,8 @@
 #define PI 3.14159265358979323846
 #define TWO_PI 6.28318530717958647693
 
+bool DEBUG_MODE = false;
+
 GLfloat WIDTH = 800, HEIGHT = 600;
 GLfloat ASPECT = WIDTH / HEIGHT;
 
@@ -35,9 +37,9 @@ glm::vec2 LAST_MOUSE_POS(WIDTH/2, HEIGHT/2);
 float SPEED = 1000.0f;
 float ROTATE_SPEED = 5.0f;
 float MOUSE_ROTATE_SPEED = 0.01;
-float PLANET_RADIUS = 100000;
+float PLANET_RADIUS = 10000;
 
-glm::vec3 CAMERA = glm::vec3(-40486, -12120, -90630);
+glm::vec3 CAMERA = glm::vec3(0, 0, 0);
 glm::vec2 CAMERA_ROTATION(0, -PI / 2);
 
 std::map<std::string, GLuint> UNIFORM_LOCATIONS;
@@ -98,12 +100,12 @@ int main()
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable(GL_DEPTH_TEST);
-	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
 	GLfloat lastFrame = glfwGetTime();
 	GLfloat dt = glfwGetTime();
 
-	Planet planet = Planet(PLANET_RADIUS, "mapbig.png");
+	Planet planet = Planet(PLANET_RADIUS, "map.png");
 	planet.setPlayerCamera(&CAMERA);
 
 	//Window loop
@@ -188,6 +190,27 @@ void handleControls(GLfloat dt)
 	{
 		std::cout << "Framerate: " << dt << "ms  " << 1 / dt << "fps" << std::endl;
 		KEYS[GLFW_KEY_F] = false;
+	}
+
+	if (KEYS[GLFW_KEY_P])
+	{
+		if (DEBUG_MODE)
+		{
+			std::cout << "SWITCHING DEBUG MODE OFF!" << std::endl;
+			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+			SPEED = 1000.0f;
+			DEBUG_MODE = false;
+			KEYS[GLFW_KEY_P] = false;
+		}
+		else
+		{
+			std::cout << "SWITCHING DEBUG MODE ON!" << std::endl;
+			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+			SPEED = 10000.0f;
+			DEBUG_MODE = true;
+			KEYS[GLFW_KEY_P] = false;
+		}
+
 	}
 }
 
