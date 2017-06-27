@@ -13,14 +13,10 @@
 #define PI 3.14159265358979323846
 #define TWO_PI 6.28318530717958647693
 
-
-
 class Planet
 {
 
 public:
-
-	enum class LOD_QUALITY { HIGH, MEDIUM, LOW };
 
 	Planet(float radius);
 	Planet(float radius, std::string heightmapFP);
@@ -34,26 +30,22 @@ public:
 private:
 	void createShaderProgram();
 	void generate();
+	void ensureLimits(	std::vector<glm::vec3> *startList, std::vector<glm::vec3> *endList, char toCheck);
 
 	float radius;
 
 	const static int MAX_TERRAIN_BLOCKS_HQ = 10;
 	const static int MAX_TERRAIN_BLOCKS_MQ = 17;
 	const static int MAX_TERRAIN_BLOCKS_LQ = 25;
-	const static int CHUNK_SIZE = 100;
 	const static int LOD = 100;
 
+	glm::vec2 CHUNK_SIZE = glm::vec2(5, 5);
+
 	Heightmap heightmap;
-
-
-
-
 
 	Shader shader;
 
 	std::map<std::string, GLuint> uniformLocations;
-
-	LOD_QUALITY LODQuality;
 
 	TerrainBlock terrainBlocksHQ[MAX_TERRAIN_BLOCKS_HQ];
 	TerrainBlock terrainBlocksMQ[MAX_TERRAIN_BLOCKS_MQ];

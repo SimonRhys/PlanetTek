@@ -13,6 +13,9 @@
 
 class TerrainBlock
 {
+
+
+
 public:
 
 	TerrainBlock();
@@ -20,14 +23,15 @@ public:
 
 	void create(Shader *shader, std::map<std::string, GLuint> *uniformLocations);
 	void draw(glm::mat4 proj, glm::mat4 view, float radius, int lod);
-	void generate(glm::vec2 start, glm::vec2 end, Heightmap *heightmap, float radius, int lod);
-
+	void generate(glm::vec3 start, glm::vec3 end, Heightmap *heightmap, float radius, int lod);
+	void generate(std::vector<glm::vec3> start, std::vector<glm::vec3> end, Heightmap *heightmap, float radius, int lod);
+	
+	bool intersect(glm::vec3 p);
 
 private:
-	void addCol(int xValue, glm::vec2 yRange, Heightmap *heightmap, float radius, int lod);
+	void generateVertices(glm::vec3 start, glm::vec3 end, Heightmap *heightmap, float radius, int lod);
 
-	glm::vec3 mapCartesianToSpherical(glm::vec2 coords, Heightmap *heightmap, float radius);
-
+	glm::vec3 mapCubeToSphere(glm::vec3 coords, float radius);
 
 	bool inUse;
 

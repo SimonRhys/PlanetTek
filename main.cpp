@@ -37,9 +37,9 @@ glm::vec2 LAST_MOUSE_POS(WIDTH/2, HEIGHT/2);
 float SPEED = 1000.0f;
 float ROTATE_SPEED = 5.0f;
 float MOUSE_ROTATE_SPEED = 0.01;
-float PLANET_RADIUS = 10000;
+float PLANET_RADIUS = 64*100;
 
-glm::vec3 CAMERA = glm::vec3(0, 0, 0);
+glm::vec3 CAMERA = glm::vec3(0, -PLANET_RADIUS, 0);
 glm::vec2 CAMERA_ROTATION(0, -PI / 2);
 
 std::map<std::string, GLuint> UNIFORM_LOCATIONS;
@@ -105,7 +105,7 @@ int main()
 	GLfloat lastFrame = glfwGetTime();
 	GLfloat dt = glfwGetTime();
 
-	Planet planet = Planet(PLANET_RADIUS, "map.png");
+	Planet planet = Planet(PLANET_RADIUS, "mapsmall.png");
 	planet.setPlayerCamera(&CAMERA);
 
 	//Window loop
@@ -127,7 +127,7 @@ int main()
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		//Setup the Projection and View matricies
-		glm::mat4 projection = glm::perspective(45.0f, ASPECT, 1.0f, 100000.0f);
+		glm::mat4 projection = glm::perspective(45.0f, ASPECT, 1.0f, 1000000.0f);
 		glm::mat4 view = glm::rotate(CAMERA_ROTATION.x, glm::vec3(1, 0, 0));
 		view = view * glm::rotate(CAMERA_ROTATION.y, glm::vec3(0, 1, 0));
 		view = view * glm::translate(CAMERA);

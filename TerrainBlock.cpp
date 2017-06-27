@@ -32,7 +32,7 @@ void TerrainBlock::draw(glm::mat4 proj, glm::mat4 view, float radius, int lod)
 	glUniformMatrix4fv(uniformLocations->at("model"), 1, GL_FALSE, glm::value_ptr(glm::mat4(1)));
 
 	glUniform3f(uniformLocations->at("lightPos"), -10000*1.5, 10000*1.5, 10000*1.5);
-	glUniform3f(uniformLocations->at("lightColor"), 0.5f, 0.5f, 0.5f);
+	glUniform3f(uniformLocations->at("lightColor"), 1.0f, 0.0f, 0.0f);
 	glUniform3f(uniformLocations->at("objectColor"), 1.0f, 1.0f, 1.0f);
 
 	if (lod > 4)
@@ -51,70 +51,14 @@ void TerrainBlock::draw(glm::mat4 proj, glm::mat4 view, float radius, int lod)
 
 	glUseProgram(0);
 }
-
-void TerrainBlock::generate(glm::vec2 start, glm::vec2 end, Heightmap *heightmap, float radius, int lod)
+void TerrainBlock::generate(glm::vec3 start, glm::vec3 end, Heightmap *heightmap, float radius, int lod)
 {
 	this->inUse = false;
-
 
 	vertices.clear();
 	indices.clear();
 
-	if (start.x >= heightmap->getWidth())
-	{
-		return;
-	}
-
-	if (start.y >= heightmap->getHeight())
-	{
-		return;
-	}
-
-	if (end.x > heightmap->getWidth())
-	{
-		end.x = heightmap->getWidth();
-	}
-
-	if (end.y > heightmap->getHeight())
-	{
-		end.y = heightmap->getHeight();
-	}
-
-
-	for (int x = start.x; x < end.x; x += lod)
-	{
-		glm::vec2 yRange = glm::vec2(start.y, end.y);
-		addCol(x, yRange, heightmap, radius, lod);
-	}
-
-	//Need to add an extra row at the end
-	//to ensure we use the value mapSize.x
-	//
-	//Note: We can't use <= in the loop above as
-	//		with a custom modifier it might never = mapSize.x
-
-	glm::vec2 yRange = glm::vec2(start.y, end.y);
-	addCol(end.x, yRange, heightmap, radius, lod);
-
-
-
-	glm::vec2 length = glm::ceil((end - start) / glm::vec2(lod, lod));
-	length.x += 1;
-	length.y += 1;
-
-	for (int i = 0; i < length.x - 1; i++)
-	{
-		for (int j = 0; j < length.y - 1; j++)
-		{
-			indices.push_back(i*length.y + j);
-			indices.push_back((i + 1)*length.y + j);
-			indices.push_back(i*length.y + j + 1);
-
-			indices.push_back((i + 1)*length.y + j);
-			indices.push_back(i*length.y + j + 1);
-			indices.push_back((i + 1)*length.y + j + 1);
-		}
-	}
+	generateVertices(start, end, heightmap, radius, lod);
 
 	glBindVertexArray(vao);
 
@@ -134,6 +78,193 @@ void TerrainBlock::generate(glm::vec2 start, glm::vec2 end, Heightmap *heightmap
 	this->inUse = true;
 }
 
+
+void TerrainBlock::generate(std::vector<glm::vec3> start, std::vector<glm::vec3> end, Heightmap *heightmap, float radius, int lod)
+{
+	this->inUse = false;
+
+	vertices.clear();
+	indices.clear();
+
+	for (int i = 0; i < start.size(); i++)
+	{
+		generateVertices(start[i], end[i], heightmap, radius, lod);
+	}
+
+
+	glBindVertexArray(vao);
+
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), &vertices.front(), GL_DYNAMIC_DRAW);
+
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 2 * sizeof(glm::vec3), (GLvoid*)0);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 2 * sizeof(glm::vec3), (GLvoid*)(1 * sizeof(glm::vec3)));
+	glEnableVertexAttribArray(1);
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), &indices.front(), GL_DYNAMIC_DRAW);
+
+	glBindVertexArray(0);
+
+	this->inUse = true;
+}
+
+bool TerrainBlock::intersect(glm::vec3 point)
+{
+	return true;
+}
+
+void TerrainBlock::generateVertices(glm::vec3 start, glm::vec3 end, Heightmap *heightmap, float radius, int lod)
+{
+	//We have to change our loop starts and ends as we could
+	//have a loop of of 32 -> -32 which is valid but would fail
+	//the generic loop structure
+	glm::vec2 loopStart; 
+	glm::vec2 loopEnd;
+	glm::vec3 outerLoopModifier;
+	glm::vec3 innerLoopModifier;
+	glm::vec3 startModifier;
+
+	if (start.x == end.x)
+	{
+		loopStart = glm::vec2(start.z, start.y);
+		loopEnd = glm::vec2(end.z, end.y);
+
+		loopStart.x = glm::min(start.z, end.z);
+		loopStart.y = glm::min(start.y, end.y);
+
+		loopEnd.x = glm::max(start.z, end.z);
+		loopEnd.y = glm::max(start.y, end.y);
+
+		outerLoopModifier = glm::vec3(0, 0, 1);
+		innerLoopModifier = glm::vec3(0, 1, 0);
+		startModifier = glm::vec3(1, 0, 0);
+	}
+	else if (start.y == end.y)
+	{
+		loopStart = glm::vec2(start.x, start.z);
+		loopEnd = glm::vec2(end.x, end.z);
+
+		loopStart.x = glm::min(start.x, end.x);
+		loopStart.y = glm::min(start.z, end.z);
+
+		loopEnd.x = glm::max(start.x, end.x);
+		loopEnd.y = glm::max(start.z, end.z);
+
+		outerLoopModifier = glm::vec3(1, 0, 0);
+		innerLoopModifier = glm::vec3(0, 0, 1);
+		startModifier = glm::vec3(0, 1, 0);
+
+	}
+	else if (start.z == end.z)
+	{
+		loopStart = glm::vec2(start.x, start.y);
+		loopEnd = glm::vec2(end.x, end.y);
+
+		loopStart.x = glm::min(start.x, end.x);
+		loopStart.y = glm::min(start.y, end.y);
+
+		loopEnd.x = glm::max(start.x, end.x);
+		loopEnd.y = glm::max(start.y, end.y);
+
+		outerLoopModifier = glm::vec3(1, 0, 0);
+		innerLoopModifier = glm::vec3(0, 1, 0);
+		startModifier = glm::vec3(0, 0, 1);
+
+	}
+
+	//In case we already have stuff in the vertex buffer
+	//we need to be able to offset our indices
+	float indexOffset = vertices.size() / 2;
+
+	for (int x = loopStart.x; x < loopEnd.x; x += lod)
+	{
+		int y = loopStart.y;
+		while(y < loopEnd.y)
+		{
+			glm::vec3 sample(0, 0, 0);
+			sample += startModifier*start;
+			sample += outerLoopModifier*(float)x;
+			sample += innerLoopModifier*(float)y;
+			glm::vec3 coords = mapCubeToSphere(sample, radius+heightmap->get(sample));
+			vertices.push_back(coords);
+			vertices.push_back(coords);
+
+			y += lod;
+
+			//We want to perform one last vertex addition as the sphere
+			//cannot generate properly unless mapSize.y is included in 
+			//the range of vertices
+			if (y >= loopEnd.y)
+			{
+				sample = glm::vec3(0, 0, 0);
+				sample += startModifier*start;
+				sample += outerLoopModifier*(float)x;
+				sample += innerLoopModifier*(float)loopEnd.y;
+				coords = mapCubeToSphere(sample, radius+heightmap->get(sample));
+				vertices.push_back(coords);
+				vertices.push_back(coords);
+			}
+		}
+	}
+
+	//Need to add an extra row at the end
+	//to ensure we use the value mapSize.x
+	//
+	//Note: We can't use <= in the loop above as
+	//		with a custom modifier it might never = mapSize.x
+
+	int y = loopStart.y;
+	while( y < loopEnd.y)
+	{
+		glm::vec3 sample(0, 0, 0);
+		sample += startModifier*start;
+		sample += outerLoopModifier*loopEnd.x;
+		sample += innerLoopModifier*(float)y;
+		glm::vec3 coords = mapCubeToSphere(sample, radius+heightmap->get(sample));
+		vertices.push_back(coords);
+		vertices.push_back(coords);
+		
+		y += lod;
+
+		//We want to perform one last vertex addition as the sphere
+		//cannot generate properly unless mapSize.y is included in 
+		//the range of vertices
+		if (y >= loopEnd.y)
+		{
+			sample = glm::vec3(0, 0, 0);
+			sample += startModifier*start;
+			sample += outerLoopModifier*loopEnd.x;
+			sample += innerLoopModifier*(float)loopEnd.y;
+			coords = mapCubeToSphere(sample, radius+heightmap->get(sample));
+			vertices.push_back(coords);
+			vertices.push_back(coords);
+		}
+	}
+
+
+
+	glm::vec2 length = glm::ceil((loopEnd - loopStart) / glm::vec2(lod, lod));
+	length.x += 1;
+	length.y += 1;
+
+	for (int i = 0; i < length.x - 1; i++)
+	{
+		for (int j = 0; j < length.y - 1; j++)
+		{
+			indices.push_back(i*length.y + j + indexOffset);
+			indices.push_back((i + 1)*length.y + j + indexOffset);
+			indices.push_back(i*length.y + j + 1 + indexOffset);
+
+			indices.push_back((i + 1)*length.y + j + indexOffset);
+			indices.push_back((i + 1)*length.y + j + 1 + indexOffset);
+			indices.push_back(i*length.y + j + 1 + indexOffset);
+		}
+	}
+}
+
+
 TerrainBlock::~TerrainBlock()
 {
 	glDeleteVertexArrays(1, &vao);
@@ -142,40 +273,10 @@ TerrainBlock::~TerrainBlock()
 }
 
 //Private
-void TerrainBlock::addCol(int xValue, glm::vec2 yRange, Heightmap *heightmap, float radius, int lod)
+glm::vec3 TerrainBlock::mapCubeToSphere(glm::vec3 coords, float radius)
 {
-	int y = yRange.x;
-	while (y < yRange.y)
-	{
-		glm::vec3 coords = mapCartesianToSpherical(glm::vec2(xValue, y), heightmap, radius+heightmap->get(xValue, y));
-		vertices.push_back(coords);
-		vertices.push_back(coords);
-
-		y += lod;
-
-		//We want to perform one last vertex addition as the sphere
-		//cannot generate properly unless mapSize.y is included in 
-		//the range of vertices
-		if (y >= yRange.y)
-		{
-			coords = mapCartesianToSpherical(glm::vec2(xValue, yRange.y), heightmap, radius+heightmap->get(xValue, yRange.y));
-			vertices.push_back(coords);
-			vertices.push_back(coords);
-		}
-	}
-}
-
-glm::vec3 TerrainBlock::mapCartesianToSpherical(glm::vec2 coords, Heightmap *heightmap, float radius)
-{
-	float thetaDelta = PI / heightmap->getHeight();
-	float phiDelta = TWO_PI / heightmap->getWidth();
-	float theta = coords.y * thetaDelta;
-	float phi = coords.x * phiDelta;
-	
 	glm::vec3 coords2;
-	coords2.x = radius * glm::sin(theta) * glm::cos(phi);
-	coords2.y = radius * glm::sin(theta) * glm::sin(phi);
-	coords2.z = radius * glm::cos(theta);
+	coords2 = glm::normalize(coords) * radius;
 
 	return coords2;
 }
