@@ -43,6 +43,64 @@ void Planet::setPlayerCamera(glm::vec3 *playerCamera)
 
 void Planet::update(float dt)
 {
+	glm::vec3 newPlayerPos(6, 6, 32);
+
+	int mapCounter = 0;
+
+	for (int i = -3; i < 3; i++)
+	{
+		for (int j = -3; j < 3; j++)
+		{
+			std::vector<glm::vec3> startList = lodMap[mapCounter]->getStartPoints();
+			std::vector<glm::vec3> endList = lodMap[mapCounter]->getEndPoints();
+
+			if (intersect(startList, endList, newPlayerPos) && (i != 0 || j != 0))
+			{
+				//RELOAD LOD (IGNORE CORNER CASES FOR NOW)
+				if (i == -1 && j == 0)
+				{
+					regenMap.insert_or_assign(16, 5);
+					regenMap.insert_or_assign(17, 5);
+					regenMap.insert_or_assign(18, 5);
+
+					regenMap.insert_or_assign(37, 1);
+					regenMap.insert_or_assign(38, 1);
+					regenMap.insert_or_assign(39, 1);
+
+					regenMap.insert_or_assign(44, 5);
+					regenMap.insert_or_assign(45, 5);
+					regenMap.insert_or_assign(46, 5);
+				}
+				else if (i == 1 && j == 0)
+				{
+					regenMap.insert_or_assign(2, 5);
+					regenMap.insert_or_assign(3, 5);
+					regenMap.insert_or_assign(4, 5);
+
+					regenMap.insert_or_assign(9, 1);
+					regenMap.insert_or_assign(10, 1);
+					regenMap.insert_or_assign(11, 1);
+
+					regenMap.insert_or_assign(30, 5);
+					regenMap.insert_or_assign(31, 5);
+					regenMap.insert_or_assign(32, 5);
+				}
+				else if (i == 0 && j == -1)
+				{
+
+				}
+				else if (i == 0 && j == 1)
+				{
+
+				}
+			}
+
+			mapCounter++;
+		}
+
+	}
+
+
 }
 
 Planet::~Planet()
@@ -79,7 +137,7 @@ void Planet::createShaderProgram()
 
 void Planet::generate()
 {
-	glm::vec3 playerPos(20, 20, 32);
+	glm::vec3 playerPos(0, 0, 32);
 	glm::vec3 modifier(1, 1, 0);
 
 
@@ -88,6 +146,8 @@ void Planet::generate()
 	int blockCountHQ = 0;
 	int blockCountMQ = 0;
 	int blockCountLQ = 0;
+
+	int mapCounter = 0;
 
 
 
@@ -152,6 +212,8 @@ void Planet::generate()
 					terrainBlocksLQ[blockCountLQ].generate(start, end, &heightmap, radius, 10);
 				}
 
+				lodMap.insert_or_assign(mapCounter++, &terrainBlocksLQ[blockCountLQ]);
+
 				blockCountLQ++;
 			}
 			else if (distanceFromCentre == 2)
@@ -165,6 +227,8 @@ void Planet::generate()
 					terrainBlocksMQ[blockCountMQ].generate(start, end, &heightmap, radius, 5);
 				}
 
+				lodMap.insert_or_assign(mapCounter++, &terrainBlocksMQ[blockCountMQ]);
+
 				blockCountMQ++;
 			}
 			else 
@@ -177,6 +241,8 @@ void Planet::generate()
 				{
 					terrainBlocksHQ[blockCountHQ].generate(start, end, &heightmap, radius, 1);
 				}
+
+				lodMap.insert_or_assign(mapCounter++, &terrainBlocksHQ[blockCountHQ]);
 
 				blockCountHQ++;
 			}
@@ -341,5 +407,39 @@ void Planet::ensureLimits(std::vector<glm::vec3> *startList, std::vector<glm::ve
 			endList->push_back(endToAdd[i]);
 		}
 	}
+
+}
+
+bool Planet::intersect(std::vector<glm::vec3> startList, std::vector<glm::vec3> endList, glm::vec3 v)
+{
+	if (startList.size() != endList.size())
+	{
+		std::cout << "Intersection cannot be found as there were differing numbers of starting points and end points!" << std::endl;
+		return false;
+	}
+
+	for (int i = 0; i < startList.size(); i++)
+	{
+		glm::vec3 s;
+		glm::vec3 e;
+
+		s.x = glm::min(startList[i].x, endList[i].x);
+		s.y = glm::min(startList[i].y, endList[i].y);
+		s.z = glm::min(startList[i].z, endList[i].z);
+
+		e.x = glm::max(startList[i].x, endList[i].x);
+		e.y = glm::max(startList[i].y, endList[i].y);
+		e.z = glm::max(startList[i].z, endList[i].z);
+
+		if (v.x >= s.x && v.x <= e.x &&
+			v.y >= s.y && v.y <= e.y &&
+			v.z >= s.z && v.z <= e.z)
+		{
+			return true;
+		}
+	}
+
+	return false;
+
 
 }

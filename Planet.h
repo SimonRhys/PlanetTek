@@ -31,6 +31,7 @@ private:
 	void createShaderProgram();
 	void generate();
 	void ensureLimits(	std::vector<glm::vec3> *startList, std::vector<glm::vec3> *endList, char toCheck);
+	bool intersect(std::vector<glm::vec3> startList, std::vector<glm::vec3> endList, glm::vec3 v);
 
 	float radius;
 
@@ -46,6 +47,8 @@ private:
 	Shader shader;
 
 	std::map<std::string, GLuint> uniformLocations;
+	std::map<int, TerrainBlock*> lodMap;
+	std::map<int, int> regenMap;
 
 	TerrainBlock terrainBlocksHQ[MAX_TERRAIN_BLOCKS_HQ];
 	TerrainBlock terrainBlocksMQ[MAX_TERRAIN_BLOCKS_MQ];

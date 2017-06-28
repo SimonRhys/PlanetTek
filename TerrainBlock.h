@@ -26,7 +26,8 @@ public:
 	void generate(glm::vec3 start, glm::vec3 end, Heightmap *heightmap, float radius, int lod);
 	void generate(std::vector<glm::vec3> start, std::vector<glm::vec3> end, Heightmap *heightmap, float radius, int lod);
 	
-	bool intersect(glm::vec3 p);
+	std::vector<glm::vec3> getStartPoints();
+	std::vector<glm::vec3> getEndPoints();
 
 private:
 	void generateVertices(glm::vec3 start, glm::vec3 end, Heightmap *heightmap, float radius, int lod);
@@ -45,6 +46,9 @@ private:
 
 	std::vector<glm::vec3> vertices;
 	std::vector<GLuint> indices;
+
+	std::vector<glm::vec3> startPoints;
+	std::vector<glm::vec3> endPoints;
 
 };
 

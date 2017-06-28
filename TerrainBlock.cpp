@@ -55,6 +55,9 @@ void TerrainBlock::generate(glm::vec3 start, glm::vec3 end, Heightmap *heightmap
 {
 	this->inUse = false;
 
+	this->startPoints.push_back(start);
+	this->endPoints.push_back(end);
+
 	vertices.clear();
 	indices.clear();
 
@@ -83,6 +86,9 @@ void TerrainBlock::generate(std::vector<glm::vec3> start, std::vector<glm::vec3>
 {
 	this->inUse = false;
 
+	this->startPoints = start;
+	this->endPoints = end;
+
 	vertices.clear();
 	indices.clear();
 
@@ -110,9 +116,15 @@ void TerrainBlock::generate(std::vector<glm::vec3> start, std::vector<glm::vec3>
 	this->inUse = true;
 }
 
-bool TerrainBlock::intersect(glm::vec3 point)
+std::vector<glm::vec3> TerrainBlock::getStartPoints()
 {
-	return true;
+	return this->startPoints;
+}
+
+
+std::vector<glm::vec3> TerrainBlock::getEndPoints()
+{
+	return this->endPoints;
 }
 
 void TerrainBlock::generateVertices(glm::vec3 start, glm::vec3 end, Heightmap *heightmap, float radius, int lod)
