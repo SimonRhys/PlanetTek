@@ -18,7 +18,7 @@ void TerrainBlock::create(Shader *shader, std::map<std::string, GLuint> *uniform
 	this->uniformLocations = uniformLocations;
 }
 
-void TerrainBlock::draw(glm::mat4 proj, glm::mat4 view, float radius, int lod)
+void TerrainBlock::draw(glm::mat4 proj, glm::mat4 view, float radius)
 {
 	if (!inUse)
 	{
@@ -35,12 +35,12 @@ void TerrainBlock::draw(glm::mat4 proj, glm::mat4 view, float radius, int lod)
 	glUniform3f(uniformLocations->at("lightColor"), 1.0f, 0.0f, 0.0f);
 	glUniform3f(uniformLocations->at("objectColor"), 1.0f, 1.0f, 1.0f);
 
-	if (lod > 4)
+	if (LOD > 4)
 	{
 		glUniform3f(uniformLocations->at("lightColor"), 0.0f, 1.0f, 0.0f);
 	}
 	
-	if (lod > 9)
+	if (LOD > 9)
 	{
 		glUniform3f(uniformLocations->at("lightColor"), 0.0f, 0.0f, 1.0f);
 	}
@@ -54,7 +54,7 @@ void TerrainBlock::draw(glm::mat4 proj, glm::mat4 view, float radius, int lod)
 void TerrainBlock::generate(glm::vec3 start, glm::vec3 end, Heightmap *heightmap, float radius, int lod)
 {
 	this->inUse = false;
-
+	this->LOD = lod;
 	this->startPoints.push_back(start);
 	this->endPoints.push_back(end);
 
@@ -85,7 +85,7 @@ void TerrainBlock::generate(glm::vec3 start, glm::vec3 end, Heightmap *heightmap
 void TerrainBlock::generate(std::vector<glm::vec3> start, std::vector<glm::vec3> end, Heightmap *heightmap, float radius, int lod)
 {
 	this->inUse = false;
-
+	this->LOD = lod;
 	this->startPoints = start;
 	this->endPoints = end;
 
@@ -114,6 +114,16 @@ void TerrainBlock::generate(std::vector<glm::vec3> start, std::vector<glm::vec3>
 	glBindVertexArray(0);
 
 	this->inUse = true;
+}
+
+void TerrainBlock::markUnused()
+{
+	this->inUse = false;
+}
+
+bool TerrainBlock::isUsed()
+{
+	return inUse;
 }
 
 std::vector<glm::vec3> TerrainBlock::getStartPoints()

@@ -44,6 +44,7 @@ glm::vec2 CAMERA_ROTATION(0, -PI / 2);
 
 std::map<std::string, GLuint> UNIFORM_LOCATIONS;
 
+glm::vec3 DEBUG_PLAYER(2, 2, 32);
 
 
 void handleControls(GLfloat dt);
@@ -106,7 +107,7 @@ int main()
 	GLfloat dt = glfwGetTime();
 
 	Planet planet = Planet(PLANET_RADIUS, "mapsmall.png");
-	planet.setPlayerCamera(&CAMERA);
+	planet.setPlayerCamera(&DEBUG_PLAYER);
 
 	//Window loop
 	while (!glfwWindowShouldClose(window))
@@ -211,6 +212,29 @@ void handleControls(GLfloat dt)
 			KEYS[GLFW_KEY_P] = false;
 		}
 
+	}
+
+	if (DEBUG_MODE)
+	{
+		if (KEYS[GLFW_KEY_I])
+		{
+			DEBUG_PLAYER.y += dt;
+		}
+		else if (KEYS[GLFW_KEY_K])
+		{
+			DEBUG_PLAYER.y -= dt;
+
+		}
+
+		if (KEYS[GLFW_KEY_J])
+		{
+			DEBUG_PLAYER.x -= dt;
+
+		}
+		else if (KEYS[GLFW_KEY_L])
+		{
+			DEBUG_PLAYER.x += dt;
+		}
 	}
 }
 

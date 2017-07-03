@@ -22,10 +22,13 @@ public:
 	~TerrainBlock();
 
 	void create(Shader *shader, std::map<std::string, GLuint> *uniformLocations);
-	void draw(glm::mat4 proj, glm::mat4 view, float radius, int lod);
+	void draw(glm::mat4 proj, glm::mat4 view, float radius);
 	void generate(glm::vec3 start, glm::vec3 end, Heightmap *heightmap, float radius, int lod);
 	void generate(std::vector<glm::vec3> start, std::vector<glm::vec3> end, Heightmap *heightmap, float radius, int lod);
-	
+	void markUnused();
+
+	bool isUsed();
+
 	std::vector<glm::vec3> getStartPoints();
 	std::vector<glm::vec3> getEndPoints();
 
@@ -40,6 +43,8 @@ private:
 	GLuint vbo;
 	GLuint ebo;
 
+	int LOD;
+
 	Shader *shader;
 
 	std::map<std::string, GLuint> *uniformLocations;
@@ -51,4 +56,3 @@ private:
 	std::vector<glm::vec3> endPoints;
 
 };
-
