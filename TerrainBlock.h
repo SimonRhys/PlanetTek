@@ -23,19 +23,21 @@ public:
 
 	void create(Shader *shader, std::map<std::string, GLuint> *uniformLocations);
 	void draw(glm::mat4 proj, glm::mat4 view, float radius);
-	void generate(glm::vec3 start, glm::vec3 end, Heightmap *heightmap, float radius, int lod);
-	void generate(std::vector<glm::vec3> start, std::vector<glm::vec3> end, Heightmap *heightmap, float radius, int lod);
+	void generate(glm::vec2 start, glm::vec2 end, Heightmap *heightmap, float radius, int lod);
 	void markUnused();
 
 	bool isUsed();
 
-	std::vector<glm::vec3> getStartPoints();
-	std::vector<glm::vec3> getEndPoints();
+	glm::vec2 getStartPoint();
+	glm::vec2 getEndPoint();
 
 private:
-	void generateVertices(glm::vec3 start, glm::vec3 end, Heightmap *heightmap, float radius, int lod);
+	void generateVertices(glm::vec2 start, glm::vec2 end, Heightmap *heightmap, float radius, int lod);
 
 	glm::vec3 mapCubeToSphere(glm::vec3 coords, float radius);
+	glm::vec3 mapOctohedronToSphere(glm::vec2 coords, Heightmap *heightmap, float radius);
+	glm::vec3 lerp(glm::vec3 v1, glm::vec3 v2, float p);
+
 
 	bool inUse;
 
@@ -52,7 +54,7 @@ private:
 	std::vector<glm::vec3> vertices;
 	std::vector<GLuint> indices;
 
-	std::vector<glm::vec3> startPoints;
-	std::vector<glm::vec3> endPoints;
+	glm::vec2 startPoint;
+	glm::vec2 endPoint;
 
 };

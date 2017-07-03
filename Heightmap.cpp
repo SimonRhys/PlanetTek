@@ -12,71 +12,36 @@ void Heightmap::create(int s)
 	SIZE = s;
 	HALF_SIZE = s / 2;
 
-	HEIGHT_MAP_TOP = new float[SIZE*SIZE];
-	HEIGHT_MAP_BOT = new float[SIZE*SIZE];
-	HEIGHT_MAP_LEFT = new float[SIZE*SIZE];
-	HEIGHT_MAP_RIGHT = new float[SIZE*SIZE];
-	HEIGHT_MAP_FRONT = new float[SIZE*SIZE];
-	HEIGHT_MAP_BACK = new float[SIZE*SIZE];
+	HEIGHT_MAP = new float[SIZE*SIZE];
 
-	createSide(HEIGHT_MAP_TOP);
-	createSide(HEIGHT_MAP_BOT);
+	for (int i = 0; i < SIZE; i++)
+	{
+		for (int j = 0; j < SIZE; j++)
+		{
+			float r = rand() % 1000 + 500;
+			float g = rand() % 1000 + 500;
+			float b = rand() % 1000 + 500;
 
-	createSide(HEIGHT_MAP_LEFT);
-	createSide(HEIGHT_MAP_RIGHT);
-
-	createSide(HEIGHT_MAP_FRONT);
-	createSide(HEIGHT_MAP_BACK);
-
+			float height = (r + g + b) / 3;
+			HEIGHT_MAP[i*SIZE + j] = height;
+		}
+	}
 
 	std::cout << "Created Heightmap successfully!" << std::endl;
 }
 
-float Heightmap::get(int x, int y, int z)
+float Heightmap::get(int x, int y)
 {
-	if (x == HALF_SIZE)
-	{
-		y += HALF_SIZE;
-		z += HALF_SIZE;
-		return HEIGHT_MAP_RIGHT[y*SIZE + z];
-	}
-	else if (x == -HALF_SIZE)
-	{
-		y += HALF_SIZE;
-		z += HALF_SIZE;
-		return HEIGHT_MAP_LEFT[y*SIZE + z];
-	}
-	else if (y == HALF_SIZE)
-	{
-		x += HALF_SIZE;
-		z += HALF_SIZE;
-		return HEIGHT_MAP_TOP[x*SIZE + z];
-	}
-	else if (y == -HALF_SIZE)
-	{
-		x += HALF_SIZE;
-		z += HALF_SIZE;
-		return HEIGHT_MAP_BOT[x*SIZE + z];
-	}
-	else if (z == HALF_SIZE)
-	{
-		x += HALF_SIZE;
-		y += HALF_SIZE;
-		return HEIGHT_MAP_FRONT[x*SIZE + y];
-	}
-	else if (z == -HALF_SIZE)
-	{
-		x += HALF_SIZE;
-		y += HALF_SIZE;
-		return HEIGHT_MAP_BACK[x*SIZE + y];
-	}
-	
+	x = x%SIZE;
+	y = y%SIZE;
+
+	return HEIGHT_MAP[y*SIZE+ x];	
 }
 
-float Heightmap::get(glm::vec3 p)
+float Heightmap::get(glm::vec2 p)
 {
 	
-	return get(p.x, p.y, p.z);
+	return get(p.x, p.y);
 }
 
 int Heightmap::getHeight()
@@ -117,12 +82,7 @@ void Heightmap::load(std::string heightmapFP)
 	int HEIGHT = h;
 
 
-	HEIGHT_MAP_TOP = new float[SIZE*SIZE];
-	HEIGHT_MAP_BOT = new float[SIZE*SIZE];
-	HEIGHT_MAP_LEFT = new float[SIZE*SIZE];
-	HEIGHT_MAP_RIGHT = new float[SIZE*SIZE];
-	HEIGHT_MAP_FRONT = new float[SIZE*SIZE];
-	HEIGHT_MAP_BACK = new float[SIZE*SIZE];
+	HEIGHT_MAP = new float[SIZE*SIZE];
 
 	for (int y = 0; y < HEIGHT; y++)
 	{
@@ -133,12 +93,7 @@ void Heightmap::load(std::string heightmapFP)
 			float b = heightmap[y*WIDTH * 3 + x * 3 + 2];
 
 			float height = (r + g + b) / 3;
-			HEIGHT_MAP_TOP[y*WIDTH + x] = height;
-			HEIGHT_MAP_BOT[y*WIDTH + x] = height;
-			HEIGHT_MAP_LEFT[y*WIDTH + x] = height;
-			HEIGHT_MAP_RIGHT[y*WIDTH + x] = height;
-			HEIGHT_MAP_FRONT[y*WIDTH + x] = height;
-			HEIGHT_MAP_BACK[y*WIDTH + x] = height;
+			HEIGHT_MAP[y*WIDTH + x] = height;
 		}
 	}
 
@@ -148,27 +103,5 @@ void Heightmap::load(std::string heightmapFP)
 
 Heightmap::~Heightmap()
 {
-	delete[] HEIGHT_MAP_TOP;
-	delete[] HEIGHT_MAP_BOT;
-	delete[] HEIGHT_MAP_LEFT;
-	delete[] HEIGHT_MAP_RIGHT;
-	delete[] HEIGHT_MAP_FRONT;
-	delete[] HEIGHT_MAP_BACK;
-}
-
-//PRIVATE
-void Heightmap::createSide(float *side)
-{
-	for (int i = 0; i < SIZE; i++)
-	{
-		for (int j = 0; j < SIZE; j++)
-		{
-			float r = rand() % 1000 + 500;
-			float g = rand() % 1000 + 500;
-			float b = rand() % 1000 + 500;
-
-			float height = (r + g + b) / 3;
-			side[i*SIZE + j] = height;
-		}
-	}
+	delete[] HEIGHT_MAP;
 }

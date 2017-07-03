@@ -35,7 +35,7 @@ void Planet::setPlayerCamera(glm::vec3 *playerCamera)
 
 void Planet::update(float dt)
 {
-	if (this->reloading)
+	/*if (this->reloading)
 	{
 		return; 
 	}
@@ -117,7 +117,7 @@ void Planet::update(float dt)
 
 			mapCounter++;
 		}
-	}
+	}*/
 
 
 }
@@ -148,11 +148,8 @@ void Planet::createShaderProgram()
 
 void Planet::generate()
 {
-	glm::vec3 playerPos(0, 0, 32);
-	glm::vec3 modifier(1, 1, 0);
-
-
-	glm::vec3 centre = playerPos;
+	glm::vec2 playerPos(30, 30);
+	glm::vec2 centre = playerPos;
 
 	int blockCount = 0;
 
@@ -160,99 +157,46 @@ void Planet::generate()
 	{
 		for (int j = -3; j <= 3; j++)
 		{
-			std::vector<glm::vec3> startList;
-			std::vector<glm::vec3> endList;
+			glm::vec2 start = centre;
+			glm::vec2 end;
 
-			glm::vec3 start = centre;
-			glm::vec3 end;
 
-			if (modifier.x == 0)
-			{
-				start.y = centre.y + j*modifier.y*CHUNK_SIZE.x;
-				start.z = centre.z + i*modifier.z*CHUNK_SIZE.y;
+			start.x = centre.x + j*CHUNK_SIZE.x;
+			start.y = centre.y + i*CHUNK_SIZE.y;
 
-				end = start;
-				end.y = start.y + CHUNK_SIZE.x;
-				end.z = start.z + CHUNK_SIZE.y;
-			}
-
-			if (modifier.y == 0)
-			{
-				start.x = centre.x + j*modifier.x*CHUNK_SIZE.x;
-				start.z = centre.z + i*modifier.z*CHUNK_SIZE.y;
-
-				end = start;
-				end.x = start.x + CHUNK_SIZE.x;
-				end.z = start.z + CHUNK_SIZE.y;
-			}
-
-			if (modifier.z == 0)
-			{
-				start.x = centre.x + j*modifier.x*CHUNK_SIZE.x;
-				start.y = centre.y + i*modifier.y*CHUNK_SIZE.y;
-
-				end = start;
-				end.x = start.x + CHUNK_SIZE.x;
-				end.y = start.y + CHUNK_SIZE.y;
-			}
-
-			startList.push_back(start);
-			endList.push_back(end);
-
-			ensureLimits(&startList, &endList, 'x');
-			ensureLimits(&startList, &endList, 'y');
-			ensureLimits(&startList, &endList, 'z');
+			end = start;
+			end.x = start.x + CHUNK_SIZE.x;
+			end.y = start.y + CHUNK_SIZE.y;
+			
 
 			glm::vec2 distanceVector = glm::abs(glm::vec2(j, i));
 			int distanceFromCentre = glm::max(distanceVector.x, distanceVector.y);
+			int lod;
 
 			if (distanceFromCentre == 3)
 			{
-				if (startList.size() > 0)
-				{
-					terrainBlocks[blockCount].generate(startList, endList, &heightmap, radius, 10);
-				}
-				else
-				{
-					terrainBlocks[blockCount].generate(start, end, &heightmap, radius, 10);
-				}
-
-				lodMap.push_back(&terrainBlocks[blockCount]);
-
-				blockCount++;
+				lod = 10;
 			}
 			else if (distanceFromCentre == 2)
 			{
-				if (startList.size() > 0)
-				{
-					terrainBlocks[blockCount].generate(startList, endList, &heightmap, radius, 5);
-				}
-				else
-				{
-					terrainBlocks[blockCount].generate(start, end, &heightmap, radius, 5);
-				}
-
-				lodMap.push_back(&terrainBlocks[blockCount]);
-
-				blockCount++;
+				lod = 5;
 			}
 			else 
 			{
-				if (startList.size() > 0)
-				{
-					terrainBlocks[blockCount].generate(startList, endList, &heightmap, radius, 1);
-				}
-				else
-				{
-					terrainBlocks[blockCount].generate(start, end, &heightmap, radius, 1);
-				}
-
-				lodMap.push_back( &terrainBlocks[blockCount]);
-
-				blockCount++;
+				lod = 1;
 			}
+
+			terrainBlocks[blockCount].generate(start, end, &heightmap, radius, lod);
+			lodMap.push_back(&terrainBlocks[blockCount]);
+			blockCount++;
 		}
 	}
+
+	/*int blockCount = 0;
+
+	terrainBlocks[blockCount].generate(glm::vec2(0, 0), glm::vec2(64, 64), &heightmap, radius, 1);
+	lodMap.push_back(&terrainBlocks[blockCount]);
+	blockCount++;*/
 }
 
 void Planet::ensureLimits(std::vector<glm::vec3> *startList, std::vector<glm::vec3> *endList, char toCheck)
@@ -417,7 +361,7 @@ void Planet::ensureLimits(std::vector<glm::vec3> *startList, std::vector<glm::ve
 
 void Planet::reloadLODs()
 {
-	std::cout << "Reloading LODs..." << std::endl;
+	/*std::cout << "Reloading LODs..." << std::endl;
 
 	this->reloading = true;
 
@@ -444,7 +388,7 @@ void Planet::reloadLODs()
 
 	regenMap.clear();
 
-	//this->reloading = false;
+	//this->reloading = false;*/
 
 }
 

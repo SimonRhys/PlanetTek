@@ -16,8 +16,8 @@ public:
 
 	void create(int size);
 
-	float get(int x, int y, int z);
-	float get(glm::vec3 p);
+	float get(int x, int y);
+	float get(glm::vec2 p);
 	int getHeight();
 	int getWidth();
 	int getSize();
@@ -25,15 +25,7 @@ public:
 	void load(std::string heightmapFP);
 
 private:
-	void createSide(float *side);
-
-	float *HEIGHT_MAP_TOP;
-	float *HEIGHT_MAP_BOT;
-	float *HEIGHT_MAP_LEFT;
-	float *HEIGHT_MAP_RIGHT;
-	float *HEIGHT_MAP_FRONT;
-	float *HEIGHT_MAP_BACK;
-
+	float *HEIGHT_MAP;
 	
 	int SIZE;
 	int HALF_SIZE;

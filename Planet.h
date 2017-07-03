@@ -44,7 +44,7 @@ private:
 	const static int MAX_TERRAIN_BLOCKS_TOTAL = MAX_TERRAIN_BLOCKS_HQ + MAX_TERRAIN_BLOCKS_MQ + MAX_TERRAIN_BLOCKS_LQ;
 	const static int LOD = 100;
 
-	glm::vec2 CHUNK_SIZE = glm::vec2(10, 10);
+	glm::vec2 CHUNK_SIZE = glm::vec2(5, 5);
 
 	Heightmap heightmap;
 
