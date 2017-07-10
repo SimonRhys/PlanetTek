@@ -24,8 +24,43 @@ void Planet::draw(glm::mat4 proj, glm::mat4 view)
 {
 	for (int i = 0; i < MAX_TERRAIN_BLOCKS_TOTAL; i++)
 	{
-		terrainBlocks[i].draw(proj, view, radius);
+		if (texture == 0)
+		{
+			terrainBlocks[i].draw(proj, view, radius);
+		}
+		else
+		{
+			terrainBlocks[i].draw(proj, view, radius, texture);
+		}
 	}
+}
+
+void Planet::loadTextures(std::string filePath)
+{
+	int w, h, channels;
+	unsigned char *image = SOIL_load_image(filePath.c_str(), &w, &h, &channels, SOIL_LOAD_RGB);
+	if (image == 0)
+	{
+		std::cout << "SOIL failed to load image." << std::endl;
+		return;
+	}
+	else
+	{
+		std::cout << "SOIL loaded Planet textures!" << std::endl;
+	}
+
+	glGenTextures(1, &texture);
+	glBindTexture(GL_TEXTURE_2D, texture);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+	glGenerateMipmap(GL_TEXTURE_2D);
+
+
+	SOIL_free_image_data(image);
 }
 
 void Planet::setPlayerCamera(glm::vec3 *playerCamera)
@@ -35,7 +70,7 @@ void Planet::setPlayerCamera(glm::vec3 *playerCamera)
 
 void Planet::update(float dt)
 {
-	/*if (this->reloading)
+	if (this->reloading)
 	{
 		return; 
 	}
@@ -46,14 +81,28 @@ void Planet::update(float dt)
 	{
 		for (int j = -3; j <= 3; j++)
 		{
-			std::vector<glm::vec3> startList = lodMap[mapCounter]->getStartPoints();
-			std::vector<glm::vec3> endList = lodMap[mapCounter]->getEndPoints();
+			glm::vec2 startPoint = lodMap[mapCounter]->getStartPoint();
+			glm::vec2 endPoint = lodMap[mapCounter]->getEndPoint();
 
-			if (intersect(startList, endList, *playerCamera) && (i != 0 || j != 0))
+			if (intersect(startPoint, endPoint, glm::vec2(playerCamera->x, playerCamera->y)) &&
+				(i != 0 || j != 0))
 			{
 				//RELOAD LOD (IGNORE CORNER CASES FOR NOW)
-				if (i == -1 && j == 0)
+				if (i == 1 && j == 0)
 				{
+					for (int k = 0; k < lodMap.size()-7; k++)
+					{
+						lodMap[k] = lodMap[k+7];
+					}
+
+					//For the last 7 chunks we need to create the far LOD
+					for (int k = lodMap.size()-7; k < lodMap.size(); k++)
+					{
+						glm::vec2 modifier(0, CHUNK_SIZE.y);
+						genMap.push_back(std::pair<int, glm::vec2>(k, modifier));
+					}
+
+					//BELOW NEEDS TO CHANGE TOO
 					regenMap.push_back(std::pair<int, int>(16, 5));
 					regenMap.push_back(std::pair<int, int>(17, 5));
 					regenMap.push_back(std::pair<int, int>(18, 5));
@@ -66,8 +115,24 @@ void Planet::update(float dt)
 					regenMap.push_back(std::pair<int, int>(45, 5));
 					regenMap.push_back(std::pair<int, int>(46, 5));
 				}
-				else if (i == 1 && j == 0)
+				else if (i == -1 && j == 0)
 				{
+					for (int k = lodMap.size(); k > 6; k++)
+					{
+						lodMap[k] = lodMap[k - 7];
+					}
+
+					//For k = [0, 6] we need to create the far LOD
+					for (int k = 0; k <= 6; k++)
+					{
+						glm::vec2 newStart = lodMap[k]->getStartPoint();
+						glm::vec2 newEnd = lodMap[k]->getEndPoint();
+
+						newStart.y += CHUNK_SIZE.y;
+						newEnd.y += CHUNK_SIZE.y;
+
+					}
+
 					regenMap.push_back(std::pair<int, int>(2, 5));
 					regenMap.push_back(std::pair<int, int>(3, 5));
 					regenMap.push_back(std::pair<int, int>(4, 5));
@@ -117,13 +182,14 @@ void Planet::update(float dt)
 
 			mapCounter++;
 		}
-	}*/
+	}
 
 
 }
 
 Planet::~Planet()
 {
+	glDeleteTextures(1, &texture);
 }
 
 //Private
@@ -138,7 +204,6 @@ void Planet::createShaderProgram()
 	uniformLocations["model"] = glGetUniformLocation(shader.getShaderProgram(), "model");
 	uniformLocations["lightPos"] = glGetUniformLocation(shader.getShaderProgram(), "lightPos");
 	uniformLocations["lightColor"] = glGetUniformLocation(shader.getShaderProgram(), "lightColor");
-	uniformLocations["objectColor"] = glGetUniformLocation(shader.getShaderProgram(), "objectColor");
 
 	for (int i = 0; i < MAX_TERRAIN_BLOCKS_TOTAL; i++)
 	{
@@ -167,7 +232,6 @@ void Planet::generate()
 			end = start;
 			end.x = start.x + CHUNK_SIZE.x;
 			end.y = start.y + CHUNK_SIZE.y;
-			
 
 			glm::vec2 distanceVector = glm::abs(glm::vec2(j, i));
 			int distanceFromCentre = glm::max(distanceVector.x, distanceVector.y);
@@ -199,169 +263,9 @@ void Planet::generate()
 	blockCount++;*/
 }
 
-void Planet::ensureLimits(std::vector<glm::vec3> *startList, std::vector<glm::vec3> *endList, char toCheck)
-{
-	std::vector<glm::vec3> startToAdd;
-	std::vector<glm::vec3> endToAdd;
-
-	int len = startList->size();
-	for (int i = 0; i < len; i++)
-	{
-		glm::vec3 modifier = endList->at(i) - startList->at(i);
-		modifier = glm::sign(modifier);
-
-		float *startPointer;
-		float *endPointer;
-		if (toCheck == 'x')
-		{
-			startPointer = &startList->at(i).x;
-			endPointer = &endList->at(i).x;
-		}
-		else if (toCheck == 'y')
-		{
-			startPointer = &startList->at(i).y;
-			endPointer = &endList->at(i).y;
-		}
-		else if (toCheck == 'z')
-		{
-			startPointer = &startList->at(i).z;
-			endPointer = &endList->at(i).z;
-		}
-		else
-		{
-			return;
-		}
-
-		glm::vec3 *start = &startList->at(i);
-		glm::vec3 *end = &endList->at(i);
-
-		bool startChanged = false;
-
-		if (glm::abs(*startPointer) > heightmap.getWidth() / 2)
-		{
-			glm::vec3 newModifier(0, 0, 0);
-
-			if (modifier.x == 0)
-			{
-				newModifier.x = -glm::sign(start->x);
-			}
-			else if (modifier.y == 0)
-			{
-				newModifier.y = -glm::sign(start->y);
-			}
-			else if (modifier.z == 0)
-			{
-				newModifier.z = -glm::sign(start->z);
-			}
-
-			float overshoot = glm::abs(*startPointer) - heightmap.getWidth() / 2;
-			start->x = start->x + overshoot*newModifier.x;
-			start->y = start->y + overshoot*newModifier.y;
-			start->z = start->z + overshoot*newModifier.z;
-
-			*startPointer = (heightmap.getWidth() / 2)*glm::sign(*startPointer);
-			startChanged = true;
-		}
-
-
-		if (glm::abs(*endPointer) > heightmap.getWidth() / 2)
-		{
-			glm::vec3 newModifier(0, 0, 0);
-
-			if (modifier.x == 0)
-			{
-				newModifier.x = -glm::sign(start->x);
-
-				if (!startChanged)
-				{
-					startToAdd.push_back(*start);
-
-					if (&end->y == endPointer)
-					{
-						endToAdd.push_back(glm::vec3(heightmap.getWidth() / 2, heightmap.getWidth() / 2, end->z));
-					}
-					else if (&end->z == endPointer)
-					{
-						endToAdd.push_back(glm::vec3(heightmap.getWidth() / 2, end->y, heightmap.getWidth() / 2));
-					}
-
-					*startPointer = (heightmap.getWidth() / 2)*glm::sign(*endPointer);
-					start->x = (heightmap.getWidth() / 2)*glm::sign(end->x);
-				}
-			}
-			else if (modifier.y == 0)
-			{
-				newModifier.y = -glm::sign(end->y);
-
-
-				if (!startChanged)
-				{
-					startToAdd.push_back(*start);
-
-					if (&end->x == endPointer)
-					{
-						endToAdd.push_back(glm::vec3(heightmap.getWidth() / 2, heightmap.getWidth() / 2, end->z));
-					}
-					else if (&end->z == endPointer)
-					{
-						endToAdd.push_back(glm::vec3(end->x, heightmap.getWidth() / 2, heightmap.getWidth() / 2));
-					}
-
-					*startPointer = (heightmap.getWidth() / 2)*glm::sign(*endPointer);
-					start->y = (heightmap.getWidth() / 2)*glm::sign(end->y);
-				}
-			}
-			else if (modifier.z == 0)
-			{
-				newModifier.z = -glm::sign(end->z);
-
-				if (!startChanged)
-				{
-					startToAdd.push_back(*start);
-
-					if (&end->x == endPointer)
-					{
-						endToAdd.push_back(glm::vec3(heightmap.getWidth() / 2, end->y, heightmap.getWidth() / 2));
-					}
-					else if (&end->y == endPointer)
-					{
-						endToAdd.push_back(glm::vec3(end->x, heightmap.getWidth() / 2, heightmap.getWidth() / 2));
-					}
-
-					*startPointer = (heightmap.getWidth() / 2)*glm::sign(*endPointer);
-					start->z = (heightmap.getWidth() / 2)*glm::sign(end->z);
-				}
-			}
-
-			float overshoot = glm::abs(*endPointer) - heightmap.getWidth() / 2;
-			end->x = end->x + overshoot*newModifier.x;
-			end->y = end->y + overshoot*newModifier.y;
-			end->z = end->z + overshoot*newModifier.z;
-
-			*endPointer = (heightmap.getWidth() / 2)*glm::sign(*endPointer);
-
-			startToAdd.push_back(*start);
-			endToAdd.push_back(*end);
-		
-		}
-	}
-
-	if (startToAdd.size() > 0)
-	{
-		startList->clear();
-		endList->clear();
-		for (int i = 0; i < startToAdd.size(); i++)
-		{
-			startList->push_back(startToAdd[i]);
-			endList->push_back(endToAdd[i]);
-		}
-	}
-
-}
-
 void Planet::reloadLODs()
 {
-	/*std::cout << "Reloading LODs..." << std::endl;
+	std::cout << "Reloading LODs..." << std::endl;
 
 	this->reloading = true;
 
@@ -373,10 +277,10 @@ void Planet::reloadLODs()
 		{
 			if (!terrainBlocks[j].isUsed())
 			{
-				std::vector<glm::vec3> startPoints = currBlock->getStartPoints();
-				std::vector<glm::vec3> endPoints = currBlock->getEndPoints();
+				glm::vec2 startPoint = currBlock->getStartPoint();
+				glm::vec2 endPoint = currBlock->getEndPoint();
 
-				terrainBlocks[j].generate(startPoints, endPoints, &heightmap, radius, regenMap[i].second);
+				terrainBlocks[j].generate(startPoint, endPoint, &heightmap, radius, regenMap[i].second);
 				currBlock->markUnused();
 				
 				lodMap[regenMap[i].first] = &terrainBlocks[j];
@@ -388,11 +292,31 @@ void Planet::reloadLODs()
 
 	regenMap.clear();
 
-	//this->reloading = false;*/
+	//this->reloading = false;
 
 }
 
-bool Planet::intersect(std::vector<glm::vec3> startList, std::vector<glm::vec3> endList, glm::vec3 v)
+bool Planet::intersect(glm::vec2 startPoint, glm::vec2 endPoint, glm::vec2 v)
+{
+	glm::vec3 s;
+	glm::vec3 e;
+
+	s.x = glm::min(startPoint.x, endPoint.x);
+	s.y = glm::min(startPoint.y, endPoint.y);
+
+	e.x = glm::max(startPoint.x, endPoint.x);
+	e.y = glm::max(startPoint.y, endPoint.y);
+
+	if (v.x >= s.x && v.x <= e.x &&
+		v.y >= s.y && v.y <= e.y)
+	{
+		return true;
+	}
+
+	return false;
+}
+
+bool Planet::intersect(std::vector<glm::vec2> startList, std::vector<glm::vec2> endList, glm::vec2 v)
 {
 	if (startList.size() != endList.size())
 	{
@@ -402,20 +326,7 @@ bool Planet::intersect(std::vector<glm::vec3> startList, std::vector<glm::vec3> 
 
 	for (int i = 0; i < startList.size(); i++)
 	{
-		glm::vec3 s;
-		glm::vec3 e;
-
-		s.x = glm::min(startList[i].x, endList[i].x);
-		s.y = glm::min(startList[i].y, endList[i].y);
-		s.z = glm::min(startList[i].z, endList[i].z);
-
-		e.x = glm::max(startList[i].x, endList[i].x);
-		e.y = glm::max(startList[i].y, endList[i].y);
-		e.z = glm::max(startList[i].z, endList[i].z);
-
-		if (v.x >= s.x && v.x <= e.x &&
-			v.y >= s.y && v.y <= e.y &&
-			v.z >= s.z && v.z <= e.z)
+		if (intersect(startList[i], endList[i], v))
 		{
 			return true;
 		}

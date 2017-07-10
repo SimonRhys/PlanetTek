@@ -35,7 +35,7 @@ float Heightmap::get(int x, int y)
 	x = x%SIZE;
 	y = y%SIZE;
 
-	return HEIGHT_MAP[y*SIZE+ x];	
+	return HEIGHT_MAP[y*SIZE+ x]*3;	
 }
 
 float Heightmap::get(glm::vec2 p)

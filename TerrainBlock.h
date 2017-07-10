@@ -23,6 +23,7 @@ public:
 
 	void create(Shader *shader, std::map<std::string, GLuint> *uniformLocations);
 	void draw(glm::mat4 proj, glm::mat4 view, float radius);
+	void draw(glm::mat4 proj, glm::mat4 view, float radius, GLuint texture);
 	void generate(glm::vec2 start, glm::vec2 end, Heightmap *heightmap, float radius, int lod);
 	void markUnused();
 

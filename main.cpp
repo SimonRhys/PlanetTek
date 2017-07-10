@@ -44,7 +44,7 @@ glm::vec2 CAMERA_ROTATION(0, -PI / 2);
 
 std::map<std::string, GLuint> UNIFORM_LOCATIONS;
 
-glm::vec3 DEBUG_PLAYER(2, 2, 32);
+glm::vec3 DEBUG_PLAYER(32, 32, 32);
 
 
 void handleControls(GLfloat dt);
@@ -107,6 +107,7 @@ int main()
 	GLfloat dt = glfwGetTime();
 
 	Planet planet = Planet(PLANET_RADIUS, "mapsmall.png");
+	planet.loadTextures("grass.png");
 	planet.setPlayerCamera(&DEBUG_PLAYER);
 
 	//Window loop

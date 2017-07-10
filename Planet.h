@@ -23,6 +23,7 @@ public:
 	~Planet();
 
 	void draw(glm::mat4 proj, glm::mat4 view);
+	void loadTextures(std::string filePath);
 	void setPlayerCamera(glm::vec3 *playerCamera);
 	void update(float dt);
 
@@ -30,9 +31,9 @@ public:
 private:
 	void createShaderProgram();
 	void generate();
-	void ensureLimits(	std::vector<glm::vec3> *startList, std::vector<glm::vec3> *endList, char toCheck);
 	void reloadLODs();
-	bool intersect(std::vector<glm::vec3> startList, std::vector<glm::vec3> endList, glm::vec3 v);
+	bool intersect(glm::vec2 startPoint, glm::vec2 endList, glm::vec2 v);
+	bool intersect(std::vector<glm::vec2> startList, std::vector<glm::vec2> endList, glm::vec2 v);
 
 	bool reloading;
 
@@ -44,6 +45,8 @@ private:
 	const static int MAX_TERRAIN_BLOCKS_TOTAL = MAX_TERRAIN_BLOCKS_HQ + MAX_TERRAIN_BLOCKS_MQ + MAX_TERRAIN_BLOCKS_LQ;
 	const static int LOD = 100;
 
+	GLuint texture;
+
 	glm::vec2 CHUNK_SIZE = glm::vec2(5, 5);
 
 	Heightmap heightmap;
@@ -54,6 +57,7 @@ private:
 
 	std::vector<TerrainBlock*> lodMap;
 	std::vector<std::pair<int, int>> regenMap;
+	std::vector<std::pair<int, glm::vec2>> genMap;
 
 	TerrainBlock terrainBlocks[MAX_TERRAIN_BLOCKS_TOTAL];
 

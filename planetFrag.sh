@@ -1,16 +1,29 @@
 #version 430
 in vec3 FragPos;
 in vec3 Normal;
+in vec2 Texcoord;
 
 out vec4 colour;
 
 uniform sampler2D texSampler;
 uniform vec3 lightPos; 
 uniform vec3 lightColor;
-uniform vec3 objectColor;
 
 void main()
 {
+
+	vec4 texColor = texture(texSampler, Texcoord);
+	vec3 objectColor = vec3(1, 1, 1);
+
+	if(Texcoord.x < 0 || Texcoord.y < 0)
+	{
+		objectColor = vec3(1, 1, 1);
+	}
+	else
+	{
+		objectColor = texColor.xyz;
+	}
+
     // Ambient
     float ambientStrength = 0.1f;
     vec3 ambient = ambientStrength * lightColor;

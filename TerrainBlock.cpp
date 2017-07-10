@@ -33,7 +33,6 @@ void TerrainBlock::draw(glm::mat4 proj, glm::mat4 view, float radius)
 
 	glUniform3f(uniformLocations->at("lightPos"), -10000*1.5, 10000*1.5, 10000*1.5);
 	glUniform3f(uniformLocations->at("lightColor"), 1.0f, 0.0f, 0.0f);
-	glUniform3f(uniformLocations->at("objectColor"), 1.0f, 1.0f, 1.0f);
 
 	if (LOD > 4)
 	{
@@ -46,11 +45,47 @@ void TerrainBlock::draw(glm::mat4 proj, glm::mat4 view, float radius)
 	}
 
 	glBindVertexArray(vao);
-	glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
+	glDrawArrays(GL_TRIANGLES, 0, vertices.size() / 3);
 	glBindVertexArray(0);
 
 	glUseProgram(0);
 }
+
+void TerrainBlock::draw(glm::mat4 proj, glm::mat4 view, float radius, GLuint texture)
+{
+	if (!inUse)
+	{
+		return;
+	}
+
+	glBindTexture(GL_TEXTURE_2D, texture);
+
+	glUseProgram(shader->getShaderProgram());
+
+	glUniformMatrix4fv(uniformLocations->at("projection"), 1, GL_FALSE, glm::value_ptr(proj));
+	glUniformMatrix4fv(uniformLocations->at("view"), 1, GL_FALSE, glm::value_ptr(view));
+	glUniformMatrix4fv(uniformLocations->at("model"), 1, GL_FALSE, glm::value_ptr(glm::mat4(1)));
+
+	glUniform3f(uniformLocations->at("lightPos"), -10000 * 1.5, 10000 * 1.5, 10000 * 1.5);
+	glUniform3f(uniformLocations->at("lightColor"), 1.0f, 1.0f, 1.0f);
+
+	if (LOD > 4)
+	{
+		glUniform3f(uniformLocations->at("lightColor"), 1.0f, 1.0f, 1.0f);
+	}
+
+	if (LOD > 9)
+	{
+		glUniform3f(uniformLocations->at("lightColor"), 1.0f, 1.0f, 1.0f);
+	}
+
+	glBindVertexArray(vao);
+	glDrawArrays(GL_TRIANGLES, 0, vertices.size() / 3);
+	glBindVertexArray(0);
+
+	glUseProgram(0);
+}
+
 void TerrainBlock::generate(glm::vec2 start, glm::vec2 end, Heightmap *heightmap, float radius, int lod)
 {
 	this->inUse = false;
@@ -68,13 +103,13 @@ void TerrainBlock::generate(glm::vec2 start, glm::vec2 end, Heightmap *heightmap
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), &vertices.front(), GL_DYNAMIC_DRAW);
 
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 2 * sizeof(glm::vec3), (GLvoid*)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(glm::vec3), (GLvoid*)0);
 	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 2 * sizeof(glm::vec3), (GLvoid*)(1 * sizeof(glm::vec3)));
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(glm::vec3), (GLvoid*)(1 * sizeof(glm::vec3)));
 	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(glm::vec3), (GLvoid*)(2 * sizeof(glm::vec3)));
+	glEnableVertexAttribArray(2);
 
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), &indices.front(), GL_DYNAMIC_DRAW);
 
 	glBindVertexArray(0);
 
@@ -104,10 +139,7 @@ glm::vec2 TerrainBlock::getEndPoint()
 
 void TerrainBlock::generateVertices(glm::vec2 start, glm::vec2 end, Heightmap *heightmap, float radius, int lod)
 {
-
-	//In case we already have stuff in the vertex buffer
-	//we need to be able to offset our indices
-	float indexOffset = vertices.size() / 2;
+	std::vector<glm::vec3> vertexList;
 
 	for (int x = start.x; x < end.x; x += lod)
 	{
@@ -115,8 +147,8 @@ void TerrainBlock::generateVertices(glm::vec2 start, glm::vec2 end, Heightmap *h
 		while(y < end.y)
 		{
 			glm::vec3 coords = mapOctohedronToSphere(glm::vec2(x, y), heightmap, radius+heightmap->get(x, y));
-			vertices.push_back(coords);
-			vertices.push_back(coords);
+			vertexList.push_back(coords);
+			vertexList.push_back(coords);
 
 			y += lod;
 
@@ -126,8 +158,8 @@ void TerrainBlock::generateVertices(glm::vec2 start, glm::vec2 end, Heightmap *h
 			if (y >= end.y)
 			{
 				glm::vec3 coords = mapOctohedronToSphere(glm::vec2(x, end.y), heightmap, radius + heightmap->get(x, end.y));
-				vertices.push_back(coords);
-				vertices.push_back(coords);
+				vertexList.push_back(coords);
+				vertexList.push_back(coords);
 			}
 		}
 	}
@@ -142,8 +174,8 @@ void TerrainBlock::generateVertices(glm::vec2 start, glm::vec2 end, Heightmap *h
 	while( y < end.y)
 	{
 		glm::vec3 coords = mapOctohedronToSphere(glm::vec2(end.x, y), heightmap, radius + heightmap->get(end.x, y));
-		vertices.push_back(coords);
-		vertices.push_back(coords);
+		vertexList.push_back(coords);
+		vertexList.push_back(coords);
 		
 		y += lod;
 
@@ -153,8 +185,8 @@ void TerrainBlock::generateVertices(glm::vec2 start, glm::vec2 end, Heightmap *h
 		if (y >= end.y)
 		{
 			glm::vec3 coords = mapOctohedronToSphere(glm::vec2(end.x, end.y), heightmap, radius + heightmap->get(end.x, end.y));
-			vertices.push_back(coords);
-			vertices.push_back(coords);
+			vertexList.push_back(coords);
+			vertexList.push_back(coords);
 		}
 	}
 
@@ -168,13 +200,36 @@ void TerrainBlock::generateVertices(glm::vec2 start, glm::vec2 end, Heightmap *h
 	{
 		for (int j = 0; j < length.y - 1; j++)
 		{
-			indices.push_back(i*length.y + j + indexOffset);
-			indices.push_back((i + 1)*length.y + j + indexOffset);
-			indices.push_back(i*length.y + j + 1 + indexOffset);
+			int vec1 = i*length.y + j;
+			int vec2 = vec1 + 1;
+			int vec3 = (i + 1)*length.y + j;
+			int vec4 = vec3 + 1;
+			
+			//First Triangle
+			vertices.push_back(vertexList[2 * vec1]);
+			vertices.push_back(vertexList[2 * vec1 + 1]);
+			vertices.push_back(glm::vec3(0, 0, 0));
 
-			indices.push_back((i + 1)*length.y + j + indexOffset);
-			indices.push_back((i + 1)*length.y + j + 1 + indexOffset);
-			indices.push_back(i*length.y + j + 1 + indexOffset);
+			vertices.push_back(vertexList[2 * vec3]);
+			vertices.push_back(vertexList[2 * vec3 + 1]);
+			vertices.push_back(glm::vec3(0, 1, 0));
+
+			vertices.push_back(vertexList[2 * vec2]);
+			vertices.push_back(vertexList[2 * vec2 + 1]);
+			vertices.push_back(glm::vec3(1, 0, 0));
+
+			//Second Triangle
+			vertices.push_back(vertexList[2 * vec2]);
+			vertices.push_back(vertexList[2 * vec2 + 1]);
+			vertices.push_back(glm::vec3(1, 0, 0));
+
+			vertices.push_back(vertexList[2 * vec3]);
+			vertices.push_back(vertexList[2 * vec3 + 1]);
+			vertices.push_back(glm::vec3(0, 1, 0));
+
+			vertices.push_back(vertexList[2 * vec4]);
+			vertices.push_back(vertexList[2 * vec4 + 1]);
+			vertices.push_back(glm::vec3(1, 1, 0));
 		}
 	}
 }
