@@ -90,88 +90,145 @@ void Planet::update(float dt)
 				//RELOAD LOD (IGNORE CORNER CASES FOR NOW)
 				if (i == 1 && j == 0)
 				{
+					TerrainBlock* tempBlocks[7];
+					for (int k = 0; k < 7; k++)
+					{
+						tempBlocks[k] = lodMap[k];
+					}
+
 					for (int k = 0; k < lodMap.size()-7; k++)
 					{
-						lodMap[k] = lodMap[k+7];
+						lodMap[k] = lodMap[k + 7];
 					}
 
-					//For the last 7 chunks we need to create the far LOD
-					for (int k = lodMap.size()-7; k < lodMap.size(); k++)
+					for (int k = 0; k < 7; k++)
 					{
+						lodMap[lodMap.size() - 7 + k] = tempBlocks[k];
+
+						//For the last 7 chunks we need to create the far LOD
 						glm::vec2 modifier(0, CHUNK_SIZE.y);
-						genMap.push_back(std::pair<int, glm::vec2>(k, modifier));
+						genMap.push_back(std::pair<int, glm::vec2>(lodMap.size() - 7 + k, modifier));
 					}
 
-					//BELOW NEEDS TO CHANGE TOO
-					regenMap.push_back(std::pair<int, int>(16, 5));
-					regenMap.push_back(std::pair<int, int>(17, 5));
-					regenMap.push_back(std::pair<int, int>(18, 5));
+					regenMap.push_back(std::pair<int, int>(9, 5));
+					regenMap.push_back(std::pair<int, int>(10, 5));
+					regenMap.push_back(std::pair<int, int>(11, 5));
 
-					regenMap.push_back(std::pair<int, int>(37, 1));
-					regenMap.push_back(std::pair<int, int>(38, 1));
-					regenMap.push_back(std::pair<int, int>(39, 1));
+					regenMap.push_back(std::pair<int, int>(30, 1));
+					regenMap.push_back(std::pair<int, int>(31, 1));
+					regenMap.push_back(std::pair<int, int>(32, 1));
 
-					regenMap.push_back(std::pair<int, int>(44, 5));
-					regenMap.push_back(std::pair<int, int>(45, 5));
-					regenMap.push_back(std::pair<int, int>(46, 5));
+					regenMap.push_back(std::pair<int, int>(37, 5));
+					regenMap.push_back(std::pair<int, int>(38, 5));
+					regenMap.push_back(std::pair<int, int>(39, 5));
 				}
 				else if (i == -1 && j == 0)
 				{
-					for (int k = lodMap.size(); k > 6; k++)
+					TerrainBlock* tempBlocks[7];
+					for (int k = 0; k < 7; k++)
 					{
-						lodMap[k] = lodMap[k - 7];
+						tempBlocks[k] = lodMap[lodMap.size()-7+k];
 					}
 
-					//For k = [0, 6] we need to create the far LOD
-					for (int k = 0; k <= 6; k++)
+					for (int k = lodMap.size() - 1; k > 6; k--)
 					{
-						glm::vec2 newStart = lodMap[k]->getStartPoint();
-						glm::vec2 newEnd = lodMap[k]->getEndPoint();
-
-						newStart.y += CHUNK_SIZE.y;
-						newEnd.y += CHUNK_SIZE.y;
-
+						lodMap[k] = lodMap[k - 7];	
 					}
 
-					regenMap.push_back(std::pair<int, int>(2, 5));
-					regenMap.push_back(std::pair<int, int>(3, 5));
-					regenMap.push_back(std::pair<int, int>(4, 5));
+					for (int k = 0; k < 7; k++)
+					{
+						lodMap[k] = tempBlocks[k];
 
-					regenMap.push_back(std::pair<int, int>(9, 1));
-					regenMap.push_back(std::pair<int, int>(10, 1));
-					regenMap.push_back(std::pair<int, int>(11, 1));
+						//For k = [0, 6] we need to create the far LOD
+						glm::vec2 modifier(0, -CHUNK_SIZE.y);
+						genMap.push_back(std::pair<int, glm::vec2>(k, modifier));
+					}
 
-					regenMap.push_back(std::pair<int, int>(30, 5));
-					regenMap.push_back(std::pair<int, int>(31, 5));
-					regenMap.push_back(std::pair<int, int>(32, 5));
+					regenMap.push_back(std::pair<int, int>(9, 5));
+					regenMap.push_back(std::pair<int, int>(10, 5));
+					regenMap.push_back(std::pair<int, int>(11, 5));
+
+					regenMap.push_back(std::pair<int, int>(16, 1));
+					regenMap.push_back(std::pair<int, int>(17, 1));
+					regenMap.push_back(std::pair<int, int>(18, 1));
+
+					regenMap.push_back(std::pair<int, int>(37, 5));
+					regenMap.push_back(std::pair<int, int>(38, 5));
+					regenMap.push_back(std::pair<int, int>(39, 5));
 				}
 				else if (i == 0 && j == -1)
 				{
-					regenMap.push_back(std::pair<int, int>(25, 5));
-					regenMap.push_back(std::pair<int, int>(18, 5));
-					regenMap.push_back(std::pair<int, int>(32, 5));
+					TerrainBlock* tempBlocks[7];
+					for (int k = 0; k < 7; k++)
+					{
+						tempBlocks[k] = lodMap[6+k*7];
+					}
 
-					regenMap.push_back(std::pair<int, int>(22, 1));
-					regenMap.push_back(std::pair<int, int>(15, 1));
-					regenMap.push_back(std::pair<int, int>(29, 1));
+					for (int k = lodMap.size() - 1; k >= 0; k--)
+					{
+						if (k%7 != 0)
+						{
+							lodMap[k] = lodMap[k - 1];
+						}
+					}
 
-					regenMap.push_back(std::pair<int, int>(21, 5));
-					regenMap.push_back(std::pair<int, int>(14, 5));
-					regenMap.push_back(std::pair<int, int>(28, 5));
+					for (int k = 0; k < 7; k++)
+					{
+						lodMap[k*7] = tempBlocks[k];
+
+						//For k = [0, 7, 14, 21...] we need to create the far LOD
+						glm::vec2 modifier(-CHUNK_SIZE.x, 0);
+						genMap.push_back(std::pair<int, glm::vec2>(k * 7, modifier));
+					}
+
+		
+					regenMap.push_back(std::pair<int, int>(26, 5));
+					regenMap.push_back(std::pair<int, int>(19, 5));
+					regenMap.push_back(std::pair<int, int>(33, 5));
+
+					regenMap.push_back(std::pair<int, int>(23, 1));
+					regenMap.push_back(std::pair<int, int>(16, 1));
+					regenMap.push_back(std::pair<int, int>(30, 1));
+
+					regenMap.push_back(std::pair<int, int>(22, 5));
+					regenMap.push_back(std::pair<int, int>(15, 5));
+					regenMap.push_back(std::pair<int, int>(29, 5));
 				}
 				else if (i == 0 && j == 1)
 				{
-					regenMap.push_back(std::pair<int, int>(23, 5));
-					regenMap.push_back(std::pair<int, int>(16, 5));
-					regenMap.push_back(std::pair<int, int>(30, 5));
+					TerrainBlock* tempBlocks[7];
+					for (int k = 0; k < 7; k++)
+					{
+						tempBlocks[k] = lodMap[k * 7];
+					}
 
-					regenMap.push_back(std::pair<int, int>(26, 1));
-					regenMap.push_back(std::pair<int, int>(19, 1));
-					regenMap.push_back(std::pair<int, int>(33, 1));
+					for (int k = 0; k < lodMap.size(); k++)
+					{
+						if (k % 7 != 6)
+						{
+							lodMap[k] = lodMap[k + 1];
+						}
+					}
 
-					regenMap.push_back(std::pair<int, int>(27, 5));
-					regenMap.push_back(std::pair<int, int>(17, 5));
-					regenMap.push_back(std::pair<int, int>(34, 5));
+					for (int k = 0; k < 7; k++)
+					{
+						lodMap[6 + k * 7] = tempBlocks[k];
+
+						//For k = [0, 7, 14, 21...] we need to create the far LOD
+						glm::vec2 modifier(CHUNK_SIZE.x, 0);
+						genMap.push_back(std::pair<int, glm::vec2>(6 + k * 7, modifier));
+					}
+					regenMap.push_back(std::pair<int, int>(22, 5));
+					regenMap.push_back(std::pair<int, int>(15, 5));
+					regenMap.push_back(std::pair<int, int>(29, 5));
+
+					regenMap.push_back(std::pair<int, int>(25, 1));
+					regenMap.push_back(std::pair<int, int>(18, 1));
+					regenMap.push_back(std::pair<int, int>(32, 1));
+
+					regenMap.push_back(std::pair<int, int>(26, 5));
+					regenMap.push_back(std::pair<int, int>(19, 5));
+					regenMap.push_back(std::pair<int, int>(33, 5));
 				}
 
 				this->reloadLODs();
@@ -290,9 +347,52 @@ void Planet::reloadLODs()
 		}
 	}
 
-	regenMap.clear();
+	for (int i = 0; i < genMap.size(); i++)
+	{
+		TerrainBlock* currBlock = lodMap[genMap[i].first];
+		TerrainBlock* nextBlock = nullptr;
 
-	//this->reloading = false;
+		if (genMap[i].second.y > 0)
+		{
+			nextBlock = lodMap[genMap[i].first-7];
+		}
+		else if (genMap[i].second.y < 0)
+		{
+			nextBlock = lodMap[genMap[i].first+7];
+		}
+		else if (genMap[i].second.x > 0)
+		{
+			nextBlock = lodMap[genMap[i].first - 1];
+		}
+		else if (genMap[i].second.x < 0)
+		{
+			nextBlock = lodMap[genMap[i].first + 1];
+		}
+
+		for (int j = 0; j < MAX_TERRAIN_BLOCKS_TOTAL; j++)
+		{
+			if (!terrainBlocks[j].isUsed())
+			{
+				glm::vec2 startPoint = nextBlock->getStartPoint();
+				glm::vec2 endPoint = nextBlock->getEndPoint();
+
+				startPoint += genMap[i].second;
+				endPoint += genMap[i].second;
+
+				terrainBlocks[j].generate(startPoint, endPoint, &heightmap, radius, 10);
+				currBlock->markUnused();
+
+				lodMap[genMap[i].first] = &terrainBlocks[j];
+
+				break;
+			}
+		}
+	}
+
+	regenMap.clear();
+	genMap.clear();
+
+	this->reloading = false;
 
 }
 
