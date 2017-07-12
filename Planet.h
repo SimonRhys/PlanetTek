@@ -39,6 +39,9 @@ private:
 
 	float radius;
 
+	const static int LOW_QUALITY = 1;
+	const static int MED_QUALITY = 1;
+	const static int HIGH_QUALITY = 1;
 	const static int MAX_TERRAIN_BLOCKS_HQ = 10;
 	const static int MAX_TERRAIN_BLOCKS_MQ = 17;
 	const static int MAX_TERRAIN_BLOCKS_LQ = 25;

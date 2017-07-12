@@ -263,6 +263,35 @@ glm::vec3 TerrainBlock::mapOctohedronToSphere(glm::vec2 coords, Heightmap *heigh
 	float halfWidth = width / 2;
 	float halfHeight = height / 2;
 
+	bool inBounds = false;
+	while (!inBounds)
+	{
+		if (coords.x > width)
+		{
+			coords.x = 2 * width - coords.x;
+			coords.y = height - coords.y;
+		}
+		else if (coords.x < 0)
+		{
+			coords.x = -coords.x;
+			coords.y = height - coords.y;
+		}
+
+		if (coords.y > height)
+		{
+			coords.x = width - coords.x;
+			coords.y = 2 * height - coords.y;
+		}
+		else if (coords.y < 0)
+		{
+			coords.x = width - coords.x;
+			coords.y = -coords.y;
+		}
+
+		inBounds = coords.x <= width && coords.x >= 0;
+		inBounds = inBounds && coords.y <= height && coords.y >= 0;
+	}
+
 	glm::vec3 coords2;
 
 	if (coords.x < halfWidth)
@@ -344,6 +373,7 @@ glm::vec3 TerrainBlock::mapOctohedronToSphere(glm::vec2 coords, Heightmap *heigh
 	}
 
 	coords2 -= yVec;
+	//coords2 = coords2 * 6400.f;
 	coords2 = glm::normalize(coords2) * radius;
 
 	return coords2;
@@ -355,4 +385,13 @@ glm::vec3 TerrainBlock::lerp(glm::vec3 v1, glm::vec3 v2, float p)
 	dist = dist * p;
 
 	return v1 + dist;
+}
+
+glm::vec2 TerrainBlock::rotate(glm::vec2 v, float a)
+{
+	glm::vec2 temp;
+	temp.x = glm::cos(a) * v.x - glm::sin(a) * v.y;
+	temp.y = glm::cos(a) * v.x + glm::sin(a) * v.y;
+
+	return temp;
 }

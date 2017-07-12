@@ -219,22 +219,26 @@ void handleControls(GLfloat dt)
 	{
 		if (KEYS[GLFW_KEY_I])
 		{
-			DEBUG_PLAYER.y += dt;
+			DEBUG_PLAYER.x += dt * 3;
+			DEBUG_PLAYER.y -= dt * 3;
 		}
 		else if (KEYS[GLFW_KEY_K])
 		{
-			DEBUG_PLAYER.y -= dt;
+			DEBUG_PLAYER.x -= dt * 3;
+			DEBUG_PLAYER.y += dt * 3;
 
 		}
 
 		if (KEYS[GLFW_KEY_J])
 		{
-			DEBUG_PLAYER.x -= dt;
+			DEBUG_PLAYER.x -= dt * 3;
+			DEBUG_PLAYER.y -= dt * 3;
 
 		}
 		else if (KEYS[GLFW_KEY_L])
 		{
-			DEBUG_PLAYER.x += dt;
+			DEBUG_PLAYER.x += dt * 3;
+			DEBUG_PLAYER.y += dt * 3;
 		}
 	}
 }

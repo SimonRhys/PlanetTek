@@ -38,6 +38,7 @@ private:
 	glm::vec3 mapCubeToSphere(glm::vec3 coords, float radius);
 	glm::vec3 mapOctohedronToSphere(glm::vec2 coords, Heightmap *heightmap, float radius);
 	glm::vec3 lerp(glm::vec3 v1, glm::vec3 v2, float p);
+	glm::vec2 rotate(glm::vec2 v, float a);
 
 
 	bool inUse;

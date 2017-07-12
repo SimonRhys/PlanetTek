@@ -70,6 +70,7 @@ void Planet::setPlayerCamera(glm::vec3 *playerCamera)
 
 void Planet::update(float dt)
 {
+
 	if (this->reloading)
 	{
 		return; 
@@ -88,7 +89,7 @@ void Planet::update(float dt)
 				(i != 0 || j != 0))
 			{
 				//RELOAD LOD (IGNORE CORNER CASES FOR NOW)
-				if (i == 1 && j == 0)
+				if (i == 1)
 				{
 					TerrainBlock* tempBlocks[7];
 					for (int k = 0; k < 7; k++)
@@ -110,19 +111,19 @@ void Planet::update(float dt)
 						genMap.push_back(std::pair<int, glm::vec2>(lodMap.size() - 7 + k, modifier));
 					}
 
-					regenMap.push_back(std::pair<int, int>(9, 5));
-					regenMap.push_back(std::pair<int, int>(10, 5));
-					regenMap.push_back(std::pair<int, int>(11, 5));
+					regenMap.push_back(std::pair<int, int>(9, MED_QUALITY));
+					regenMap.push_back(std::pair<int, int>(10, MED_QUALITY));
+					regenMap.push_back(std::pair<int, int>(11, MED_QUALITY));
 
-					regenMap.push_back(std::pair<int, int>(30, 1));
-					regenMap.push_back(std::pair<int, int>(31, 1));
-					regenMap.push_back(std::pair<int, int>(32, 1));
+					regenMap.push_back(std::pair<int, int>(30, HIGH_QUALITY));
+					regenMap.push_back(std::pair<int, int>(31, HIGH_QUALITY));
+					regenMap.push_back(std::pair<int, int>(32, HIGH_QUALITY));
 
-					regenMap.push_back(std::pair<int, int>(37, 5));
-					regenMap.push_back(std::pair<int, int>(38, 5));
-					regenMap.push_back(std::pair<int, int>(39, 5));
+					regenMap.push_back(std::pair<int, int>(37, MED_QUALITY));
+					regenMap.push_back(std::pair<int, int>(38, MED_QUALITY));
+					regenMap.push_back(std::pair<int, int>(39, MED_QUALITY));
 				}
-				else if (i == -1 && j == 0)
+				else if (i == -1)
 				{
 					TerrainBlock* tempBlocks[7];
 					for (int k = 0; k < 7; k++)
@@ -144,19 +145,20 @@ void Planet::update(float dt)
 						genMap.push_back(std::pair<int, glm::vec2>(k, modifier));
 					}
 
-					regenMap.push_back(std::pair<int, int>(9, 5));
-					regenMap.push_back(std::pair<int, int>(10, 5));
-					regenMap.push_back(std::pair<int, int>(11, 5));
+					regenMap.push_back(std::pair<int, int>(9, MED_QUALITY));
+					regenMap.push_back(std::pair<int, int>(10, MED_QUALITY));
+					regenMap.push_back(std::pair<int, int>(11, MED_QUALITY));
 
-					regenMap.push_back(std::pair<int, int>(16, 1));
-					regenMap.push_back(std::pair<int, int>(17, 1));
-					regenMap.push_back(std::pair<int, int>(18, 1));
+					regenMap.push_back(std::pair<int, int>(16, HIGH_QUALITY));
+					regenMap.push_back(std::pair<int, int>(17, HIGH_QUALITY));
+					regenMap.push_back(std::pair<int, int>(18, HIGH_QUALITY));
 
-					regenMap.push_back(std::pair<int, int>(37, 5));
-					regenMap.push_back(std::pair<int, int>(38, 5));
-					regenMap.push_back(std::pair<int, int>(39, 5));
+					regenMap.push_back(std::pair<int, int>(37, MED_QUALITY));
+					regenMap.push_back(std::pair<int, int>(38, MED_QUALITY));
+					regenMap.push_back(std::pair<int, int>(39, MED_QUALITY));
 				}
-				else if (i == 0 && j == -1)
+				
+				if (j == -1)
 				{
 					TerrainBlock* tempBlocks[7];
 					for (int k = 0; k < 7; k++)
@@ -182,17 +184,17 @@ void Planet::update(float dt)
 					}
 
 		
-					regenMap.push_back(std::pair<int, int>(26, 5));
-					regenMap.push_back(std::pair<int, int>(19, 5));
-					regenMap.push_back(std::pair<int, int>(33, 5));
+					regenMap.push_back(std::pair<int, int>(26, MED_QUALITY));
+					regenMap.push_back(std::pair<int, int>(19, MED_QUALITY));
+					regenMap.push_back(std::pair<int, int>(33, MED_QUALITY));
 
-					regenMap.push_back(std::pair<int, int>(23, 1));
-					regenMap.push_back(std::pair<int, int>(16, 1));
-					regenMap.push_back(std::pair<int, int>(30, 1));
+					regenMap.push_back(std::pair<int, int>(23, HIGH_QUALITY));
+					regenMap.push_back(std::pair<int, int>(16, HIGH_QUALITY));
+					regenMap.push_back(std::pair<int, int>(30, HIGH_QUALITY));
 
-					regenMap.push_back(std::pair<int, int>(22, 5));
-					regenMap.push_back(std::pair<int, int>(15, 5));
-					regenMap.push_back(std::pair<int, int>(29, 5));
+					regenMap.push_back(std::pair<int, int>(22, MED_QUALITY));
+					regenMap.push_back(std::pair<int, int>(15, MED_QUALITY));
+					regenMap.push_back(std::pair<int, int>(29, MED_QUALITY));
 				}
 				else if (i == 0 && j == 1)
 				{
@@ -218,17 +220,17 @@ void Planet::update(float dt)
 						glm::vec2 modifier(CHUNK_SIZE.x, 0);
 						genMap.push_back(std::pair<int, glm::vec2>(6 + k * 7, modifier));
 					}
-					regenMap.push_back(std::pair<int, int>(22, 5));
-					regenMap.push_back(std::pair<int, int>(15, 5));
-					regenMap.push_back(std::pair<int, int>(29, 5));
+					regenMap.push_back(std::pair<int, int>(22, MED_QUALITY));
+					regenMap.push_back(std::pair<int, int>(15, MED_QUALITY));
+					regenMap.push_back(std::pair<int, int>(29, MED_QUALITY));
 
-					regenMap.push_back(std::pair<int, int>(25, 1));
-					regenMap.push_back(std::pair<int, int>(18, 1));
-					regenMap.push_back(std::pair<int, int>(32, 1));
+					regenMap.push_back(std::pair<int, int>(25, HIGH_QUALITY));
+					regenMap.push_back(std::pair<int, int>(18, HIGH_QUALITY));
+					regenMap.push_back(std::pair<int, int>(32, HIGH_QUALITY));
 
-					regenMap.push_back(std::pair<int, int>(26, 5));
-					regenMap.push_back(std::pair<int, int>(19, 5));
-					regenMap.push_back(std::pair<int, int>(33, 5));
+					regenMap.push_back(std::pair<int, int>(26, MED_QUALITY));
+					regenMap.push_back(std::pair<int, int>(19, MED_QUALITY));
+					regenMap.push_back(std::pair<int, int>(33, MED_QUALITY));
 				}
 
 				this->reloadLODs();
@@ -296,15 +298,15 @@ void Planet::generate()
 
 			if (distanceFromCentre == 3)
 			{
-				lod = 10;
+				lod = LOW_QUALITY;
 			}
 			else if (distanceFromCentre == 2)
 			{
-				lod = 5;
+				lod = MED_QUALITY;
 			}
 			else 
 			{
-				lod = 1;
+				lod = HIGH_QUALITY;
 			}
 
 			terrainBlocks[blockCount].generate(start, end, &heightmap, radius, lod);
@@ -314,7 +316,6 @@ void Planet::generate()
 	}
 
 	/*int blockCount = 0;
-
 	terrainBlocks[blockCount].generate(glm::vec2(0, 0), glm::vec2(64, 64), &heightmap, radius, 1);
 	lodMap.push_back(&terrainBlocks[blockCount]);
 	blockCount++;*/
@@ -379,7 +380,7 @@ void Planet::reloadLODs()
 				startPoint += genMap[i].second;
 				endPoint += genMap[i].second;
 
-				terrainBlocks[j].generate(startPoint, endPoint, &heightmap, radius, 10);
+				terrainBlocks[j].generate(startPoint, endPoint, &heightmap, radius, LOW_QUALITY);
 				currBlock->markUnused();
 
 				lodMap[genMap[i].first] = &terrainBlocks[j];
