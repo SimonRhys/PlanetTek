@@ -23,9 +23,11 @@ public:
 	int getSize();
 
 	void load(std::string heightmapFP);
+	void setHeightModifier(float hm);
 
 private:
 	float *HEIGHT_MAP;
+	float heightModifier;
 	
 	int SIZE;
 	int HALF_SIZE;

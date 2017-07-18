@@ -6,16 +6,8 @@ TerrainBlock::TerrainBlock()
 {
 	glGenVertexArrays(1, &vao);
 	glGenBuffers(1, &vbo);
-	glGenBuffers(1, &ebo);
 
 	this->inUse = false;
-}
-
-void TerrainBlock::create(Shader *shader, std::map<std::string, GLuint> *uniformLocations)
-{
-
-	this->shader = shader;
-	this->uniformLocations = uniformLocations;
 }
 
 void TerrainBlock::draw(glm::mat4 proj, glm::mat4 view, float radius)
@@ -25,65 +17,9 @@ void TerrainBlock::draw(glm::mat4 proj, glm::mat4 view, float radius)
 		return;
 	}
 
-	glUseProgram(shader->getShaderProgram());
-
-	glUniformMatrix4fv(uniformLocations->at("projection"), 1, GL_FALSE, glm::value_ptr(proj));
-	glUniformMatrix4fv(uniformLocations->at("view"), 1, GL_FALSE, glm::value_ptr(view));
-	glUniformMatrix4fv(uniformLocations->at("model"), 1, GL_FALSE, glm::value_ptr(glm::mat4(1)));
-
-	glUniform3f(uniformLocations->at("lightPos"), -10000*1.5, 10000*1.5, 10000*1.5);
-	glUniform3f(uniformLocations->at("lightColor"), 1.0f, 0.0f, 0.0f);
-
-	if (LOD > 4)
-	{
-		glUniform3f(uniformLocations->at("lightColor"), 0.0f, 1.0f, 0.0f);
-	}
-	
-	if (LOD > 9)
-	{
-		glUniform3f(uniformLocations->at("lightColor"), 0.0f, 0.0f, 1.0f);
-	}
-
 	glBindVertexArray(vao);
 	glDrawArrays(GL_TRIANGLES, 0, vertices.size() / 3);
 	glBindVertexArray(0);
-
-	glUseProgram(0);
-}
-
-void TerrainBlock::draw(glm::mat4 proj, glm::mat4 view, float radius, GLuint texture)
-{
-	if (!inUse)
-	{
-		return;
-	}
-
-	glBindTexture(GL_TEXTURE_2D, texture);
-
-	glUseProgram(shader->getShaderProgram());
-
-	glUniformMatrix4fv(uniformLocations->at("projection"), 1, GL_FALSE, glm::value_ptr(proj));
-	glUniformMatrix4fv(uniformLocations->at("view"), 1, GL_FALSE, glm::value_ptr(view));
-	glUniformMatrix4fv(uniformLocations->at("model"), 1, GL_FALSE, glm::value_ptr(glm::mat4(1)));
-
-	glUniform3f(uniformLocations->at("lightPos"), -10000 * 1.5, 10000 * 1.5, 10000 * 1.5);
-	glUniform3f(uniformLocations->at("lightColor"), 1.0f, 1.0f, 1.0f);
-
-	if (LOD > 4)
-	{
-		glUniform3f(uniformLocations->at("lightColor"), 1.0f, 1.0f, 1.0f);
-	}
-
-	if (LOD > 9)
-	{
-		glUniform3f(uniformLocations->at("lightColor"), 1.0f, 1.0f, 1.0f);
-	}
-
-	glBindVertexArray(vao);
-	glDrawArrays(GL_TRIANGLES, 0, vertices.size() / 3);
-	glBindVertexArray(0);
-
-	glUseProgram(0);
 }
 
 void TerrainBlock::generate(glm::vec2 start, glm::vec2 end, Heightmap *heightmap, float radius, int lod)
@@ -205,31 +141,47 @@ void TerrainBlock::generateVertices(glm::vec2 start, glm::vec2 end, Heightmap *h
 			int vec3 = (i + 1)*length.y + j;
 			int vec4 = vec3 + 1;
 			
+			float vecLength = glm::length(vertexList[2 * vec1]);
+			vecLength = glm::max(vecLength, glm::length(vertexList[2 * vec2]));
+			vecLength = glm::max(vecLength, glm::length(vertexList[2 * vec3]));
+			vecLength = glm::max(vecLength, glm::length(vertexList[2 * vec4]));
+
+			float slopeWeight = 0;
+
+			if (vecLength >= radius*1.2)
+			{
+				vecLength -= radius*1.2;
+				vecLength = vecLength / (radius*1.3 - radius*1.2);
+				slopeWeight = glm::min(1.f, vecLength);
+			}
+
+
 			//First Triangle
 			vertices.push_back(vertexList[2 * vec1]);
 			vertices.push_back(vertexList[2 * vec1 + 1]);
-			vertices.push_back(glm::vec3(0, 0, 0));
+			vertices.push_back(glm::vec3(0, 0, slopeWeight));
 
 			vertices.push_back(vertexList[2 * vec3]);
 			vertices.push_back(vertexList[2 * vec3 + 1]);
-			vertices.push_back(glm::vec3(0, 1, 0));
+			vertices.push_back(glm::vec3(0, 1, slopeWeight));
 
 			vertices.push_back(vertexList[2 * vec2]);
 			vertices.push_back(vertexList[2 * vec2 + 1]);
-			vertices.push_back(glm::vec3(1, 0, 0));
+			vertices.push_back(glm::vec3(1, 0, slopeWeight));
 
 			//Second Triangle
 			vertices.push_back(vertexList[2 * vec2]);
 			vertices.push_back(vertexList[2 * vec2 + 1]);
-			vertices.push_back(glm::vec3(1, 0, 0));
+			vertices.push_back(glm::vec3(1, 0, slopeWeight));
 
 			vertices.push_back(vertexList[2 * vec3]);
 			vertices.push_back(vertexList[2 * vec3 + 1]);
-			vertices.push_back(glm::vec3(0, 1, 0));
+			vertices.push_back(glm::vec3(0, 1, slopeWeight));
 
 			vertices.push_back(vertexList[2 * vec4]);
 			vertices.push_back(vertexList[2 * vec4 + 1]);
-			vertices.push_back(glm::vec3(1, 1, 0));
+			vertices.push_back(glm::vec3(1, 1, slopeWeight));
+
 		}
 	}
 }
@@ -239,18 +191,9 @@ TerrainBlock::~TerrainBlock()
 {
 	glDeleteVertexArrays(1, &vao);
 	glDeleteBuffers(1, &vbo);
-	glDeleteBuffers(1, &ebo);
 }
 
 //Private
-glm::vec3 TerrainBlock::mapCubeToSphere(glm::vec3 coords, float radius)
-{
-	glm::vec3 coords2;
-	coords2 = glm::normalize(coords) * radius;
-
-	return coords2;
-}
-
 glm::vec3 TerrainBlock::mapOctohedronToSphere(glm::vec2 coords, Heightmap *heightmap, float radius)
 {
 	glm::vec3 xVec;

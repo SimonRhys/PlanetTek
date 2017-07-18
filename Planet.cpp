@@ -7,8 +7,8 @@ Planet::Planet(float radius)
 	this->radius = radius;
 	this->reloading = false;
 	heightmap.create(64);
-	this->createShaderProgram();
-	this->generate();
+	createShaderProgram();
+	generate();
 }
 
 Planet::Planet(float radius, std::string heightmapFP)
@@ -16,50 +16,62 @@ Planet::Planet(float radius, std::string heightmapFP)
 	this->radius = radius;
 	this->reloading = false;
 	heightmap.load(heightmapFP);
-	this->createShaderProgram();
-	this->generate();	
+	heightmap.setHeightModifier(radius/512);
+	createShaderProgram();
+	generate();	
 }
 
 void Planet::draw(glm::mat4 proj, glm::mat4 view) 
 {
+	glUseProgram(shader.getShaderProgram());
+
+	glUniformMatrix4fv(uniformLocations.at("projection"), 1, GL_FALSE, glm::value_ptr(proj));
+	glUniformMatrix4fv(uniformLocations.at("view"), 1, GL_FALSE, glm::value_ptr(view));
+	glUniformMatrix4fv(uniformLocations.at("model"), 1, GL_FALSE, glm::value_ptr(glm::mat4(1)));
+
+	glUniform3f(uniformLocations.at("lightPos"), -radius * 1.5, radius * 1.5, radius * 1.5);
+	glUniform3f(uniformLocations.at("lightColor"), 1.0f, 1.0f, 1.0f);
+
 	for (int i = 0; i < MAX_TERRAIN_BLOCKS_TOTAL; i++)
 	{
-		if (texture == 0)
-		{
-			terrainBlocks[i].draw(proj, view, radius);
-		}
-		else
-		{
-			terrainBlocks[i].draw(proj, view, radius, texture);
-		}
+		terrainBlocks[i].draw(proj, view, radius);
 	}
+
+	glUseProgram(0);
 }
 
-void Planet::loadTextures(std::string filePath)
+void Planet::loadTexture(std::string filePath)
 {
 	int w, h, channels;
 	unsigned char *image = SOIL_load_image(filePath.c_str(), &w, &h, &channels, SOIL_LOAD_RGB);
 	if (image == 0)
 	{
-		std::cout << "SOIL failed to load image." << std::endl;
+		std::cout << "SOIL failed to load Planet texture!" << std::endl;
 		return;
 	}
 	else
 	{
-		std::cout << "SOIL loaded Planet textures!" << std::endl;
+		std::cout << "SOIL loaded Planet texture!" << std::endl;
 	}
 
-	glGenTextures(1, &texture);
-	glBindTexture(GL_TEXTURE_2D, texture);
+	glGenTextures(1, &textures[numTexturesLoaded]);
+
+	glActiveTexture(GL_TEXTURE0 + numTexturesLoaded);
+	glBindTexture(GL_TEXTURE_2D, textures[numTexturesLoaded]);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+	std::string loc = "texSampler" + std::to_string(numTexturesLoaded);
+	glUseProgram(shader.getShaderProgram());
+	glUniform1i(glGetUniformLocation(shader.getShaderProgram(), loc.c_str()), numTexturesLoaded);
+	glUseProgram(0);
+
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
 	glGenerateMipmap(GL_TEXTURE_2D);
 
-
+	numTexturesLoaded++;
 	SOIL_free_image_data(image);
 }
 
@@ -68,12 +80,41 @@ void Planet::setPlayerCamera(glm::vec3 *playerCamera)
 	this->playerCamera = playerCamera;
 }
 
+void Planet::setRenderMode(RenderMode rm)
+{
+	this->currRenderMode = rm;
+	generate();
+}
+
 void Planet::update(float dt)
 {
+	updateLODBlocks();
+}
 
-	if (this->reloading)
+Planet::~Planet()
+{
+	glDeleteTextures(numTexturesLoaded, textures);
+}
+
+//Private
+void Planet::createShaderProgram()
+{
+	shader.createShader("planetVert.sh", GL_VERTEX_SHADER);
+	shader.createShader("planetFrag.sh", GL_FRAGMENT_SHADER);
+	shader.createProgram();
+
+	uniformLocations["projection"] = glGetUniformLocation(shader.getShaderProgram(), "projection");
+	uniformLocations["view"] = glGetUniformLocation(shader.getShaderProgram(), "view");
+	uniformLocations["model"] = glGetUniformLocation(shader.getShaderProgram(), "model");
+	uniformLocations["lightPos"] = glGetUniformLocation(shader.getShaderProgram(), "lightPos");
+	uniformLocations["lightColor"] = glGetUniformLocation(shader.getShaderProgram(), "lightColor");
+}
+
+void Planet::updateLODBlocks()
+{
+	if (reloading || currRenderMode == WHOLE)
 	{
-		return; 
+		return;
 	}
 
 	int mapCounter = 0;
@@ -97,7 +138,7 @@ void Planet::update(float dt)
 						tempBlocks[k] = lodMap[k];
 					}
 
-					for (int k = 0; k < lodMap.size()-7; k++)
+					for (int k = 0; k < lodMap.size() - 7; k++)
 					{
 						lodMap[k] = lodMap[k + 7];
 					}
@@ -107,7 +148,7 @@ void Planet::update(float dt)
 						lodMap[lodMap.size() - 7 + k] = tempBlocks[k];
 
 						//For the last 7 chunks we need to create the far LOD
-						glm::vec2 modifier(0, CHUNK_SIZE.y);
+						glm::vec2 modifier(0, BLOCK_SIZE.y);
 						genMap.push_back(std::pair<int, glm::vec2>(lodMap.size() - 7 + k, modifier));
 					}
 
@@ -128,12 +169,12 @@ void Planet::update(float dt)
 					TerrainBlock* tempBlocks[7];
 					for (int k = 0; k < 7; k++)
 					{
-						tempBlocks[k] = lodMap[lodMap.size()-7+k];
+						tempBlocks[k] = lodMap[lodMap.size() - 7 + k];
 					}
 
 					for (int k = lodMap.size() - 1; k > 6; k--)
 					{
-						lodMap[k] = lodMap[k - 7];	
+						lodMap[k] = lodMap[k - 7];
 					}
 
 					for (int k = 0; k < 7; k++)
@@ -141,7 +182,7 @@ void Planet::update(float dt)
 						lodMap[k] = tempBlocks[k];
 
 						//For k = [0, 6] we need to create the far LOD
-						glm::vec2 modifier(0, -CHUNK_SIZE.y);
+						glm::vec2 modifier(0, -BLOCK_SIZE.y);
 						genMap.push_back(std::pair<int, glm::vec2>(k, modifier));
 					}
 
@@ -157,18 +198,18 @@ void Planet::update(float dt)
 					regenMap.push_back(std::pair<int, int>(38, MED_QUALITY));
 					regenMap.push_back(std::pair<int, int>(39, MED_QUALITY));
 				}
-				
+
 				if (j == -1)
 				{
 					TerrainBlock* tempBlocks[7];
 					for (int k = 0; k < 7; k++)
 					{
-						tempBlocks[k] = lodMap[6+k*7];
+						tempBlocks[k] = lodMap[6 + k * 7];
 					}
 
 					for (int k = lodMap.size() - 1; k >= 0; k--)
 					{
-						if (k%7 != 0)
+						if (k % 7 != 0)
 						{
 							lodMap[k] = lodMap[k - 1];
 						}
@@ -176,14 +217,14 @@ void Planet::update(float dt)
 
 					for (int k = 0; k < 7; k++)
 					{
-						lodMap[k*7] = tempBlocks[k];
+						lodMap[k * 7] = tempBlocks[k];
 
 						//For k = [0, 7, 14, 21...] we need to create the far LOD
-						glm::vec2 modifier(-CHUNK_SIZE.x, 0);
+						glm::vec2 modifier(-BLOCK_SIZE.x, 0);
 						genMap.push_back(std::pair<int, glm::vec2>(k * 7, modifier));
 					}
 
-		
+
 					regenMap.push_back(std::pair<int, int>(26, MED_QUALITY));
 					regenMap.push_back(std::pair<int, int>(19, MED_QUALITY));
 					regenMap.push_back(std::pair<int, int>(33, MED_QUALITY));
@@ -217,7 +258,7 @@ void Planet::update(float dt)
 						lodMap[6 + k * 7] = tempBlocks[k];
 
 						//For k = [0, 7, 14, 21...] we need to create the far LOD
-						glm::vec2 modifier(CHUNK_SIZE.x, 0);
+						glm::vec2 modifier(BLOCK_SIZE.x, 0);
 						genMap.push_back(std::pair<int, glm::vec2>(6 + k * 7, modifier));
 					}
 					regenMap.push_back(std::pair<int, int>(22, MED_QUALITY));
@@ -233,99 +274,81 @@ void Planet::update(float dt)
 					regenMap.push_back(std::pair<int, int>(33, MED_QUALITY));
 				}
 
-				this->reloadLODs();
-
-				//STOP LOOPING
-				//return
+				reloadLODs();
 			}
 
 			mapCounter++;
 		}
 	}
-
-
-}
-
-Planet::~Planet()
-{
-	glDeleteTextures(1, &texture);
-}
-
-//Private
-void Planet::createShaderProgram()
-{
-	shader.createShader("planetVert.sh", GL_VERTEX_SHADER);
-	shader.createShader("planetFrag.sh", GL_FRAGMENT_SHADER);
-	shader.createProgram();
-
-	uniformLocations["projection"] = glGetUniformLocation(shader.getShaderProgram(), "projection");
-	uniformLocations["view"] = glGetUniformLocation(shader.getShaderProgram(), "view");
-	uniformLocations["model"] = glGetUniformLocation(shader.getShaderProgram(), "model");
-	uniformLocations["lightPos"] = glGetUniformLocation(shader.getShaderProgram(), "lightPos");
-	uniformLocations["lightColor"] = glGetUniformLocation(shader.getShaderProgram(), "lightColor");
-
-	for (int i = 0; i < MAX_TERRAIN_BLOCKS_TOTAL; i++)
-	{
-		terrainBlocks[i].create(&shader, &uniformLocations);
-	}
 }
 
 void Planet::generate()
 {
-	glm::vec2 playerPos(30, 30);
-	glm::vec2 centre = playerPos;
-
-	int blockCount = 0;
-
-	for (int i = -3; i <= 3; i++)
+	if (currRenderMode == PARTIAL)
 	{
-		for (int j = -3; j <= 3; j++)
+		for (int i = 0; i < MAX_TERRAIN_BLOCKS_TOTAL; i++)
 		{
-			glm::vec2 start = centre;
-			glm::vec2 end;
+			terrainBlocks[i].markUnused();
+		}
 
+		glm::vec2 centre(heightmap.getWidth() / 2, heightmap.getHeight() / 2);
 
-			start.x = centre.x + j*CHUNK_SIZE.x;
-			start.y = centre.y + i*CHUNK_SIZE.y;
+		int blockCount = 0;
 
-			end = start;
-			end.x = start.x + CHUNK_SIZE.x;
-			end.y = start.y + CHUNK_SIZE.y;
-
-			glm::vec2 distanceVector = glm::abs(glm::vec2(j, i));
-			int distanceFromCentre = glm::max(distanceVector.x, distanceVector.y);
-			int lod;
-
-			if (distanceFromCentre == 3)
+		for (int i = -3; i <= 3; i++)
+		{
+			for (int j = -3; j <= 3; j++)
 			{
-				lod = LOW_QUALITY;
-			}
-			else if (distanceFromCentre == 2)
-			{
-				lod = MED_QUALITY;
-			}
-			else 
-			{
-				lod = HIGH_QUALITY;
-			}
+				glm::vec2 start = centre;
+				glm::vec2 end;
 
-			terrainBlocks[blockCount].generate(start, end, &heightmap, radius, lod);
-			lodMap.push_back(&terrainBlocks[blockCount]);
-			blockCount++;
+
+				start.x = centre.x + j*BLOCK_SIZE.x;
+				start.y = centre.y + i*BLOCK_SIZE.y;
+
+				end = start;
+				end.x = start.x + BLOCK_SIZE.x;
+				end.y = start.y + BLOCK_SIZE.y;
+
+				glm::vec2 distanceVector = glm::abs(glm::vec2(j, i));
+				int distanceFromCentre = glm::max(distanceVector.x, distanceVector.y);
+				int lod;
+
+				if (distanceFromCentre == 3)
+				{
+					lod = LOW_QUALITY;
+				}
+				else if (distanceFromCentre == 2)
+				{
+					lod = MED_QUALITY;
+				}
+				else
+				{
+					lod = HIGH_QUALITY;
+				}
+
+				terrainBlocks[blockCount].generate(start, end, &heightmap, radius, lod);
+				lodMap.push_back(&terrainBlocks[blockCount]);
+				blockCount++;
+			}
 		}
 	}
+	else
+	{
+		for (int i = 0; i < MAX_TERRAIN_BLOCKS_TOTAL; i++)
+		{
+			terrainBlocks[i].markUnused();
+		}
 
-	/*int blockCount = 0;
-	terrainBlocks[blockCount].generate(glm::vec2(0, 0), glm::vec2(64, 64), &heightmap, radius, 1);
-	lodMap.push_back(&terrainBlocks[blockCount]);
-	blockCount++;*/
+		terrainBlocks[0].generate(glm::vec2(0, 0), glm::vec2(heightmap.getWidth(), heightmap.getHeight()), &heightmap, radius, MED_QUALITY);
+	}
 }
 
 void Planet::reloadLODs()
 {
 	std::cout << "Reloading LODs..." << std::endl;
 
-	this->reloading = true;
+	reloading = true;
 
 	for (int i=0; i < regenMap.size(); i++)
 	{
@@ -393,7 +416,7 @@ void Planet::reloadLODs()
 	regenMap.clear();
 	genMap.clear();
 
-	this->reloading = false;
+	reloading = false;
 
 }
 
@@ -434,33 +457,4 @@ bool Planet::intersect(std::vector<glm::vec2> startList, std::vector<glm::vec2> 
 	}
 
 	return false;
-
-
-}
-
-bool inCubeBoundry(glm::vec3 p, int len)
-{
-	bool inBoundry = true;
-
-	inBoundry = inBoundry && glm::abs(p.x) < len;
-	inBoundry = inBoundry && glm::abs(p.y) < len;
-	inBoundry = inBoundry && glm::abs(p.z) < len;
-
-	return inBoundry;
-
-
-	int width = 0;
-	int height = 0;
-	int radius = 10;
-	glm::vec3 pointsOnPlane;
-
-	float thetaDelta = PI / width;
-	float phiDelta = TWO_PI / height;
-	float theta = pointsOnPlane.x * thetaDelta;
-	float phi = pointsOnPlane.y * phiDelta;
-
-	glm::vec3 pointsOnSphere;
-	pointsOnSphere.x = radius * glm::sin(theta) * glm::cos(phi);
-	pointsOnSphere.y = radius * glm::sin(theta) * glm::sin(phi);
-	pointsOnSphere.z = radius * glm::cos(theta);
 }

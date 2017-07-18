@@ -5,6 +5,7 @@
 Heightmap::Heightmap()
 {
 	srand(time(NULL));
+	heightModifier = 1;
 }
 
 void Heightmap::create(int s)
@@ -35,7 +36,7 @@ float Heightmap::get(int x, int y)
 	x = x%SIZE;
 	y = y%SIZE;
 
-	return HEIGHT_MAP[y*SIZE+ x]*3;	
+	return HEIGHT_MAP[y*SIZE+ x]*heightModifier;	
 }
 
 float Heightmap::get(glm::vec2 p)
@@ -99,6 +100,11 @@ void Heightmap::load(std::string heightmapFP)
 
 	std::cout << "Loaded Heightmap successfully!" << std::endl;
 	SOIL_free_image_data(heightmap);
+}
+
+void Heightmap::setHeightModifier(float hm)
+{
+	heightModifier = hm;
 }
 
 Heightmap::~Heightmap()

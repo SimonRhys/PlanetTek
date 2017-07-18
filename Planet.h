@@ -17,19 +17,23 @@ class Planet
 {
 
 public:
+	enum RenderMode { PARTIAL, WHOLE };
 
 	Planet(float radius);
 	Planet(float radius, std::string heightmapFP);
 	~Planet();
 
 	void draw(glm::mat4 proj, glm::mat4 view);
-	void loadTextures(std::string filePath);
+	void loadTexture(std::string filePath);
 	void setPlayerCamera(glm::vec3 *playerCamera);
+	void setRenderMode(RenderMode rm);
 	void update(float dt);
 
 
 private:
+
 	void createShaderProgram();
+	void updateLODBlocks();
 	void generate();
 	void reloadLODs();
 	bool intersect(glm::vec2 startPoint, glm::vec2 endList, glm::vec2 v);
@@ -39,18 +43,18 @@ private:
 
 	float radius;
 
-	const static int LOW_QUALITY = 1;
-	const static int MED_QUALITY = 1;
+	const static int LOW_QUALITY = 16;
+	const static int MED_QUALITY = 4;
 	const static int HIGH_QUALITY = 1;
 	const static int MAX_TERRAIN_BLOCKS_HQ = 10;
 	const static int MAX_TERRAIN_BLOCKS_MQ = 17;
 	const static int MAX_TERRAIN_BLOCKS_LQ = 25;
 	const static int MAX_TERRAIN_BLOCKS_TOTAL = MAX_TERRAIN_BLOCKS_HQ + MAX_TERRAIN_BLOCKS_MQ + MAX_TERRAIN_BLOCKS_LQ;
-	const static int LOD = 100;
 
-	GLuint texture;
+	GLuint textures[2];
+	int numTexturesLoaded = 0;
 
-	glm::vec2 CHUNK_SIZE = glm::vec2(5, 5);
+	glm::vec2 BLOCK_SIZE = glm::vec2(5, 5);
 
 	Heightmap heightmap;
 
@@ -65,6 +69,8 @@ private:
 	TerrainBlock terrainBlocks[MAX_TERRAIN_BLOCKS_TOTAL];
 
 	glm::vec3 *playerCamera;
+
+	RenderMode currRenderMode = WHOLE;
 
 };
 

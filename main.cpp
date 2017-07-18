@@ -37,7 +37,7 @@ glm::vec2 LAST_MOUSE_POS(WIDTH/2, HEIGHT/2);
 float SPEED = 1000.0f;
 float ROTATE_SPEED = 5.0f;
 float MOUSE_ROTATE_SPEED = 0.01;
-float PLANET_RADIUS = 64*100;
+float PLANET_RADIUS = 1024*1000;
 
 glm::vec3 CAMERA = glm::vec3(0, -PLANET_RADIUS, 0);
 glm::vec2 CAMERA_ROTATION(0, -PI / 2);
@@ -106,8 +106,9 @@ int main()
 	GLfloat lastFrame = glfwGetTime();
 	GLfloat dt = glfwGetTime();
 
-	Planet planet = Planet(PLANET_RADIUS, "mapsmall.png");
-	planet.loadTextures("grass.png");
+	Planet planet = Planet(PLANET_RADIUS, "map.png");
+	planet.loadTexture("grass.png");
+	planet.loadTexture("rock.png");
 	planet.setPlayerCamera(&DEBUG_PLAYER);
 
 	//Window loop
@@ -208,7 +209,7 @@ void handleControls(GLfloat dt)
 		{
 			std::cout << "SWITCHING DEBUG MODE ON!" << std::endl;
 			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-			SPEED = 10000.0f;
+			SPEED = 1000000.0f;
 			DEBUG_MODE = true;
 			KEYS[GLFW_KEY_P] = false;
 		}
