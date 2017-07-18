@@ -26,10 +26,12 @@ protected:
 	GLuint vertexShader;
 	GLuint fragmentShader;
 	GLuint computeShader;
+	GLuint geometryShader;
 
 	bool vertexShaderSet;
 	bool fragmentShaderSet;
 	bool computeShaderSet;
+	bool geometryShaderSet;
 
 };
 

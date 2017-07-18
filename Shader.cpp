@@ -65,6 +65,11 @@ void Shader::createShader(const char* shaderPath, int shaderType)
 		computeShaderSet = true;
 		computeShader = shaderID;
 	}
+	else if (shaderType == GL_GEOMETRY_SHADER)
+	{
+		geometryShaderSet = true;
+		geometryShader = shaderID;
+	}
 }
 
 void Shader::createProgram()
@@ -86,6 +91,12 @@ void Shader::createProgram()
 	{
 		glAttachShader(shaderProgram, computeShader);
 	}
+
+	if (geometryShaderSet)
+	{
+		glAttachShader(shaderProgram, geometryShader);
+	}
+
 	glLinkProgram(shaderProgram);
 
 	// Check the program
@@ -111,6 +122,11 @@ void Shader::createProgram()
 	if (computeShaderSet)
 	{
 		glDeleteShader(computeShader);
+	}
+
+	if (geometryShaderSet)
+	{
+		glDeleteShader(geometryShader);
 	}
 
 }
