@@ -101,6 +101,7 @@ void Planet::createShaderProgram()
 {
 	shader.createShader("planetVert.sh", GL_VERTEX_SHADER);
 	shader.createShader("planetFrag.sh", GL_FRAGMENT_SHADER);
+	shader.createShader("planetGeo.sh", GL_GEOMETRY_SHADER);
 	shader.createProgram();
 
 	uniformLocations["projection"] = glGetUniformLocation(shader.getShaderProgram(), "projection");
