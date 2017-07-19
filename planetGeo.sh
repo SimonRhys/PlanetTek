@@ -16,10 +16,11 @@ out GS_OUT {
 
 uniform mat4 projection;
 uniform mat4 view;
+uniform float seaLevel;
 
 vec4 createOceanTriangle(vec3 p)
 {
-	vec4 newP = vec4(normalize(p) * 1024 * 1100, 1);
+	vec4 newP = vec4(normalize(p) * seaLevel, 1);
 
 	newP = projection * view * newP;
 	
@@ -28,9 +29,9 @@ vec4 createOceanTriangle(vec3 p)
 
 bool aboveOcean()
 {
-	if(length(gs_in[0].fragPos) > 1024 * 1100 && 
-		length(gs_in[1].fragPos) > 1024 * 1100 &&
-		length(gs_in[2].fragPos) > 1024 * 1100)
+	if(length(gs_in[0].fragPos) > seaLevel && 
+		length(gs_in[1].fragPos) > seaLevel &&
+		length(gs_in[2].fragPos) > seaLevel)
 	{
 			return true;
 	}

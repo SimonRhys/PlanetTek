@@ -31,6 +31,8 @@ void Planet::draw(glm::mat4 proj, glm::mat4 view)
 
 	glUniform3f(uniformLocations.at("lightPos"), -radius * 1.5, radius * 1.5, radius * 1.5);
 	glUniform3f(uniformLocations.at("lightColor"), 1.0f, 1.0f, 1.0f);
+	
+	glUniform1f(uniformLocations.at("seaLevel"), 1024 * 1100);
 
 	for (int i = 0; i < MAX_TERRAIN_BLOCKS_TOTAL; i++)
 	{
@@ -109,6 +111,7 @@ void Planet::createShaderProgram()
 	uniformLocations["model"] = glGetUniformLocation(shader.getShaderProgram(), "model");
 	uniformLocations["lightPos"] = glGetUniformLocation(shader.getShaderProgram(), "lightPos");
 	uniformLocations["lightColor"] = glGetUniformLocation(shader.getShaderProgram(), "lightColor");
+	uniformLocations["seaLevel"] = glGetUniformLocation(shader.getShaderProgram(), "seaLevel");
 }
 
 void Planet::updateLODBlocks()

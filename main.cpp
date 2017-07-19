@@ -130,7 +130,7 @@ int main()
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		//Setup the Projection and View matricies
-		glm::mat4 projection = glm::perspective(45.0f, ASPECT, 1.0f, 1000000.0f);
+		glm::mat4 projection = glm::perspective(45.0f, ASPECT, 1.0f, 150000.0f);
 		glm::mat4 view = glm::rotate(CAMERA_ROTATION.x, glm::vec3(1, 0, 0));
 		view = view * glm::rotate(CAMERA_ROTATION.y, glm::vec3(0, 1, 0));
 		view = view * glm::translate(CAMERA);
@@ -149,26 +149,33 @@ int main()
 
 void handleControls(GLfloat dt)
 {
+	float currSpeed = SPEED;
+
+	if (KEYS[GLFW_KEY_LEFT_SHIFT])
+	{
+		currSpeed *= 10;
+	}
+
 	if (KEYS[GLFW_KEY_W])
 	{
-		CAMERA.z += glm::cos(CAMERA_ROTATION.y) * SPEED * dt;
-		CAMERA.x -= glm::sin(CAMERA_ROTATION.y) * SPEED * dt;
+		CAMERA.z += glm::cos(CAMERA_ROTATION.y) * currSpeed * dt;
+		CAMERA.x -= glm::sin(CAMERA_ROTATION.y) * currSpeed * dt;
 	}
 	else if (KEYS[GLFW_KEY_S])
 	{
-		CAMERA.z -= glm::cos(CAMERA_ROTATION.y) * SPEED * dt;
-		CAMERA.x += glm::sin(CAMERA_ROTATION.y) * SPEED * dt;
+		CAMERA.z -= glm::cos(CAMERA_ROTATION.y) * currSpeed * dt;
+		CAMERA.x += glm::sin(CAMERA_ROTATION.y) * currSpeed * dt;
 	}
 
 	if (KEYS[GLFW_KEY_A])
 	{
-		CAMERA.z += glm::sin(CAMERA_ROTATION.y) * SPEED * dt;
-		CAMERA.x += glm::cos(CAMERA_ROTATION.y) * SPEED * dt;
+		CAMERA.z += glm::sin(CAMERA_ROTATION.y) * currSpeed * dt;
+		CAMERA.x += glm::cos(CAMERA_ROTATION.y) * currSpeed * dt;
 	}
 	else if (KEYS[GLFW_KEY_D])
 	{
-		CAMERA.z -= glm::sin(CAMERA_ROTATION.y) * SPEED * dt;
-		CAMERA.x -= glm::cos(CAMERA_ROTATION.y) * SPEED * dt;
+		CAMERA.z -= glm::sin(CAMERA_ROTATION.y) * currSpeed * dt;
+		CAMERA.x -= glm::cos(CAMERA_ROTATION.y) * currSpeed * dt;
 	}
 
 	if (KEYS[GLFW_KEY_RIGHT])
@@ -182,11 +189,11 @@ void handleControls(GLfloat dt)
 
 	if (KEYS[GLFW_KEY_SPACE])
 	{
-		CAMERA.y -= SPEED * dt;
+		CAMERA.y -= currSpeed * dt;
 	}
-	else if (KEYS[GLFW_KEY_LEFT_SHIFT])
+	else if (KEYS[GLFW_KEY_LEFT_CONTROL])
 	{
-		CAMERA.y += SPEED * dt;
+		CAMERA.y += currSpeed * dt;
 	}
 
 	if (KEYS[GLFW_KEY_F])
