@@ -28,7 +28,7 @@
 
 bool DEBUG_MODE = false;
 
-GLfloat WIDTH = 800, HEIGHT = 600;
+GLfloat WIDTH = 1200, HEIGHT = 900;
 GLfloat ASPECT = WIDTH / HEIGHT;
 
 bool KEYS[1024];

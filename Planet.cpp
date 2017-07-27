@@ -15,8 +15,8 @@ Planet::Planet(float radius, std::string heightmapFP)
 {
 	this->radius = radius;
 	this->reloading = false;
+	heightmap.setHeightModifier(1000); //radius / heightmap.getSize()
 	heightmap.load(heightmapFP);
-	heightmap.setHeightModifier(radius/512);
 	createShaderProgram();
 	generate();	
 }
@@ -32,7 +32,7 @@ void Planet::draw(glm::mat4 proj, glm::mat4 view)
 	glUniform3f(uniformLocations.at("lightPos"), -radius * 1.5, radius * 1.5, radius * 1.5);
 	glUniform3f(uniformLocations.at("lightColor"), 1.0f, 1.0f, 1.0f);
 	
-	glUniform1f(uniformLocations.at("seaLevel"), 1024 * 1100);
+	glUniform1f(uniformLocations.at("seaLevel"), 1024 * 1050);
 
 	for (int i = 0; i < MAX_TERRAIN_BLOCKS_TOTAL; i++)
 	{
@@ -344,7 +344,7 @@ void Planet::generate()
 			terrainBlocks[i].markUnused();
 		}
 
-		terrainBlocks[0].generate(glm::vec2(0, 0), glm::vec2(heightmap.getWidth(), heightmap.getHeight()), &heightmap, radius, MED_QUALITY);
+		terrainBlocks[0].generate(glm::vec2(0, 0), glm::vec2(heightmap.getWidth(), heightmap.getHeight()), &heightmap, radius, HIGH_QUALITY);
 	}
 }
 

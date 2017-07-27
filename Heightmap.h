@@ -25,11 +25,20 @@ public:
 	void load(std::string heightmapFP);
 	void setHeightModifier(float hm);
 
+	void set(int x, int y, float v);
+
 private:
+	void squareStep(int x, int y, int size, float value);
+	void diamondStep(int x, int y, int size, float value);
+	void diamondSquare(int stepsize, float scale);
+
+
+
 	float *HEIGHT_MAP;
 	float heightModifier;
 	
 	int SIZE;
 	int HALF_SIZE;
+	int FEATURE_SIZE = 4;
 };
 
