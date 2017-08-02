@@ -300,7 +300,6 @@ glm::vec3 TerrainBlock::mapOctohedronToSphere(glm::vec2 coords, Heightmap *heigh
 	}
 
 	coords2 -= yVec;
-	//coords2 = coords2 * 6400.f;
 	coords2 = glm::normalize(coords2) * radius;
 
 	return coords2;

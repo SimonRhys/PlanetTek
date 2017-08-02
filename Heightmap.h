@@ -39,6 +39,6 @@ private:
 	
 	int SIZE;
 	int HALF_SIZE;
-	int FEATURE_SIZE = 4;
+	int FEATURE_SIZE = 16;
 };
 

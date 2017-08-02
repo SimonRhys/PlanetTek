@@ -23,10 +23,15 @@
 #include "Shader.h"
 #include "Planet.h"
 
+//ImGui
+#include <ImGui/imgui.h>
+#include "imgui_impl_glfw_gl3.h"
+
 #define PI 3.14159265358979323846
 #define TWO_PI 6.28318530717958647693
 
 bool DEBUG_MODE = false;
+bool WIREFRAME = false;
 
 GLfloat WIDTH = 1200, HEIGHT = 900;
 GLfloat ASPECT = WIDTH / HEIGHT;
@@ -38,6 +43,8 @@ float SPEED = 1000.0f;
 float ROTATE_SPEED = 5.0f;
 float MOUSE_ROTATE_SPEED = 0.01;
 float PLANET_RADIUS = 1024*1000;
+float SEA_LEVEL = 1024 * 1100;
+float HEIGHT_MODIFIER = 1000;
 
 glm::vec3 CAMERA = glm::vec3(0, -1024 * 1100, 0); //1024 * 1100 = SeaLevel
 glm::vec2 CAMERA_ROTATION(0, -PI / 2);
@@ -45,7 +52,6 @@ glm::vec2 CAMERA_ROTATION(0, -PI / 2);
 std::map<std::string, GLuint> UNIFORM_LOCATIONS;
 
 glm::vec3 DEBUG_PLAYER(32, 32, 32);
-
 
 void handleControls(GLfloat dt);
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mode);
@@ -84,6 +90,10 @@ int main()
 	glfwSetWindowFocusCallback(window, windowFocusCallback);
 	glfwSetWindowSizeCallback(window, resizeWindow);
 
+	ImGui_ImplGlfwGL3_Init(window, false);
+	ImVec4 clear_color = ImColor(114, 144, 154);
+	glfwSetCharCallback(window, ImGui_ImplGlfwGL3_CharCallback);
+
 	glfwShowWindow(window);
 
 	//Initialize GLEW
@@ -121,6 +131,7 @@ int main()
 
 		//Check if any events have been activiated (key pressed, mouse moved etc.) and call corresponding response functions
 		glfwPollEvents();
+		ImGui_ImplGlfwGL3_NewFrame();
 		handleControls(dt);
 
 		planet.update(dt);
@@ -149,12 +160,60 @@ int main()
 		view = view * glm::translate(CAMERA);
 		planet.draw(projection, view);
 
+		//Render the Debug GUI
+		if (DEBUG_MODE)
+		{
+			ImGui::SetWindowFontScale(2);
+			ImGui::InputFloat(" Planet Radius", &PLANET_RADIUS);
+			if (ImGui::SliderFloat(" Sea Level", &SEA_LEVEL, PLANET_RADIUS, PLANET_RADIUS * 1.4))
+			{
+				planet.setSeaLevel(SEA_LEVEL);
+			}
+			ImGui::InputFloat(" Heightmap Scale: ", &HEIGHT_MODIFIER);
+			if (ImGui::Button("Regen Planet"))
+			{
+				planet.setRadius(PLANET_RADIUS);
+				planet.setHeightModifier(HEIGHT_MODIFIER);
+				planet.regenerate();
+			}
+
+			if (ImGui::Button("Toggle Wireframe"))
+			{
+				if (WIREFRAME)
+				{
+					glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+					WIREFRAME = false;
+				}
+				else
+				{
+					glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+					WIREFRAME = true;
+				}
+			}
+			ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+			ImGui::SliderFloat(" Camera Speed", &SPEED, 0, 100000);
+
+			if (WIREFRAME)
+			{
+				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+				ImGui::Render();
+				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+			}
+			else
+			{
+				ImGui::Render();
+			}
+			
+		}
+
+
 
 		//Swap the screen buffers
 		glfwSwapBuffers(window);
 	}
 
 	//Terminate GLFW, clearing any resources allocated by GLFW.
+	ImGui_ImplGlfwGL3_Shutdown();
 	glfwTerminate();
 	return 0;
 }
@@ -220,16 +279,14 @@ void handleControls(GLfloat dt)
 		if (DEBUG_MODE)
 		{
 			std::cout << "SWITCHING DEBUG MODE OFF!" << std::endl;
-			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-			SPEED = 1000.0f;
+			ImGui_ImplGlfwGL3_ShowCursor(false);
 			DEBUG_MODE = false;
 			KEYS[GLFW_KEY_P] = false;
 		}
 		else
 		{
 			std::cout << "SWITCHING DEBUG MODE ON!" << std::endl;
-			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-			SPEED = 1000000.0f;
+			ImGui_ImplGlfwGL3_ShowCursor(true);
 			DEBUG_MODE = true;
 			KEYS[GLFW_KEY_P] = false;
 		}
@@ -272,6 +329,12 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mode
 	}
 	else if (key >= 0 && key < 1024)
 	{
+
+		if (DEBUG_MODE)
+		{
+			ImGui_ImplGlfwGL3_KeyCallback(window, key, scancode, action, mode);
+		}
+
 		if (action == GLFW_PRESS)
 		{
 			KEYS[key] = true;
@@ -285,8 +348,15 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mode
 
 void mouseCallback(GLFWwindow* window, double xpos, double ypos)
 {
+
 	glm::vec2 newMousePos(xpos, ypos);
 	glm::vec2 diff = LAST_MOUSE_POS - newMousePos;
+
+	if (DEBUG_MODE)
+	{
+		LAST_MOUSE_POS = newMousePos;
+		return;
+	}
 
 	CAMERA_ROTATION.y -= diff.x*MOUSE_ROTATE_SPEED;
 	CAMERA_ROTATION.x -= diff.y*MOUSE_ROTATE_SPEED;

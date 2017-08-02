@@ -11,11 +11,12 @@ uniform sampler2D texSampler0;
 uniform sampler2D texSampler1;
 uniform vec3 lightPos; 
 uniform vec3 lightColor;
+uniform float seaLevel;
 
 void main()
 {
-	float minHeight = 1024*1000*1.2;
-	float maxHeight = 1024*1000*1.35;
+	float minHeight = seaLevel*1.1;
+	float maxHeight = seaLevel*1.2;
 	float scaleFactor = (length(gs_out.fragPos) - minHeight) / (maxHeight - minHeight);
 	scaleFactor = min(scaleFactor, 1);
 	scaleFactor = max(scaleFactor, 0);
@@ -34,15 +35,14 @@ void main()
 	}
 
     // Ambient
-    float ambientStrength = 0.2f;
-    vec3 ambient = ambientStrength * lightColor;
+    float ambientStrength = 0.05f;
+    vec3 ambient = ambientStrength * objectColor;
 
     // Diffuse 
     vec3 norm = normalize(gs_out.normal);
     vec3 lightDir = normalize(lightPos - gs_out.fragPos);
     float diff = max(dot(norm, lightDir), 0.0);
-    vec3 diffuse = diff * lightColor;
+    vec3 diffuse = diff * objectColor;
 
-    vec3 result = (ambient + diffuse) * objectColor;
-    colour = vec4(result, 1.0f);	
+    colour = vec4(ambient + diffuse, 1.0f);	
 }

@@ -4,8 +4,10 @@
 //Public
 Planet::Planet(float radius)
 {
+	this->heightModifier = 1000;
 	this->radius = radius;
 	this->reloading = false;
+	this->seaLevel = 1024 * 1000;
 	heightmap.create(64);
 	createShaderProgram();
 	generate();
@@ -13,9 +15,11 @@ Planet::Planet(float radius)
 
 Planet::Planet(float radius, std::string heightmapFP)
 {
+	this->heightModifier = 1000; //radius / heightmap.getSize()
 	this->radius = radius;
 	this->reloading = false;
-	heightmap.setHeightModifier(1000); //radius / heightmap.getSize()
+	this->seaLevel = 1024 * 1000;
+	heightmap.setHeightModifier(heightModifier); 
 	heightmap.load(heightmapFP);
 	createShaderProgram();
 	generate();	
@@ -32,7 +36,7 @@ void Planet::draw(glm::mat4 proj, glm::mat4 view)
 	glUniform3f(uniformLocations.at("lightPos"), -radius * 1.5, radius * 1.5, radius * 1.5);
 	glUniform3f(uniformLocations.at("lightColor"), 1.0f, 1.0f, 1.0f);
 	
-	glUniform1f(uniformLocations.at("seaLevel"), 1024 * 1050);
+	glUniform1f(uniformLocations.at("seaLevel"), seaLevel);
 
 	for (int i = 0; i < MAX_TERRAIN_BLOCKS_TOTAL; i++)
 	{
@@ -77,15 +81,36 @@ void Planet::loadTexture(std::string filePath)
 	SOIL_free_image_data(image);
 }
 
+void Planet::regenerate()
+{
+	generate();
+}
+
+void Planet::setHeightModifier(float hm)
+{
+	this->heightModifier = hm;
+	heightmap.setHeightModifier(heightModifier);
+}
+
 void Planet::setPlayerCamera(glm::vec3 *playerCamera)
 {
 	this->playerCamera = playerCamera;
+}
+
+void Planet::setRadius(float r)
+{
+	this->radius = r;
 }
 
 void Planet::setRenderMode(RenderMode rm)
 {
 	this->currRenderMode = rm;
 	generate();
+}
+
+void Planet::setSeaLevel(float sl)
+{
+	this->seaLevel = sl;
 }
 
 void Planet::update(float dt)
@@ -344,7 +369,7 @@ void Planet::generate()
 			terrainBlocks[i].markUnused();
 		}
 
-		terrainBlocks[0].generate(glm::vec2(0, 0), glm::vec2(heightmap.getWidth(), heightmap.getHeight()), &heightmap, radius, HIGH_QUALITY);
+		terrainBlocks[0].generate(glm::vec2(0, 0), glm::vec2(heightmap.getWidth(), heightmap.getHeight()), &heightmap, radius, LOW_QUALITY);
 	}
 }
 

@@ -25,8 +25,12 @@ public:
 
 	void draw(glm::mat4 proj, glm::mat4 view);
 	void loadTexture(std::string filePath);
+	void regenerate();
 	void setPlayerCamera(glm::vec3 *playerCamera);
 	void setRenderMode(RenderMode rm);
+	void setHeightModifier(float hm);
+	void setRadius(float r);
+	void setSeaLevel(float sl);
 	void update(float dt);
 
 
@@ -41,7 +45,9 @@ private:
 
 	bool reloading;
 
+	float heightModifier;
 	float radius;
+	float seaLevel;
 
 	const static int LOW_QUALITY = 16;
 	const static int MED_QUALITY = 5;

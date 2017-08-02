@@ -39,7 +39,7 @@ float Heightmap::get(int x, int y)
 	x = x%SIZE;
 	y = y%SIZE;
 
-	return HEIGHT_MAP[y*SIZE + x];
+	return HEIGHT_MAP[y*SIZE + x] * heightModifier;
 }
 
 float Heightmap::get(glm::vec2 p)
@@ -98,7 +98,7 @@ void Heightmap::load(std::string heightmapFP)
 
 			float height = (r + g + b) / 3;
 
-			set(x2, y2, height * heightModifier);
+			set(x2, y2, height);
 		}
 	}
 
@@ -106,7 +106,7 @@ void Heightmap::load(std::string heightmapFP)
 	SOIL_free_image_data(heightmap);
 
 	float stepSize = FEATURE_SIZE;
-	float scale = 100;
+	float scale = 1;
 
 	while (stepSize > 1)
 	{
@@ -143,10 +143,10 @@ void Heightmap::squareStep(int x, int y, int size, float value)
 {
 	int halfSize = size / 2;
 
-	float v1 = get(x - halfSize, y - halfSize);
-	float v2 = get(x + halfSize, y - halfSize);
-	float v3 = get(x - halfSize, y + halfSize);
-	float v4 = get(x + halfSize, y + halfSize);
+	float v1 = get(x - halfSize, y - halfSize) / heightModifier;
+	float v2 = get(x + halfSize, y - halfSize) / heightModifier;
+	float v3 = get(x - halfSize, y + halfSize) / heightModifier;
+	float v4 = get(x + halfSize, y + halfSize) / heightModifier;
 
 	float avg = ((v1 + v2 + v3 + v4) / 4) + value;
 
@@ -158,10 +158,10 @@ void Heightmap::diamondStep(int x, int y, int size, float value)
 {
 	int halfSize = size / 2;
 
-	float v1 = get(x - halfSize, y);
-	float v2 = get(x + halfSize, y);
-	float v3 = get(x, y + halfSize);
-	float v4 = get(x, y - halfSize);
+	float v1 = get(x - halfSize, y) / heightModifier;
+	float v2 = get(x + halfSize, y) / heightModifier;
+	float v3 = get(x, y + halfSize) / heightModifier;
+	float v4 = get(x, y - halfSize) / heightModifier;
 
 	float avg = ((v1 + v2 + v3 + v4) / 4) + value;
 
