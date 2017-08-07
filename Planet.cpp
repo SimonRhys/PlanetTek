@@ -8,6 +8,7 @@ Planet::Planet(float radius)
 	this->radius = radius;
 	this->reloading = false;
 	this->seaLevel = 1024 * 1000;
+	this->time = 0;
 	heightmap.create(64);
 	createShaderProgram();
 	generate();
@@ -19,6 +20,7 @@ Planet::Planet(float radius, std::string heightmapFP)
 	this->radius = radius;
 	this->reloading = false;
 	this->seaLevel = 1024 * 1000;
+	this->time = 0;
 	heightmap.setHeightModifier(heightModifier); 
 	heightmap.load(heightmapFP);
 	createShaderProgram();
@@ -37,6 +39,7 @@ void Planet::draw(glm::mat4 proj, glm::mat4 view)
 	glUniform3f(uniformLocations.at("lightColor"), 1.0f, 1.0f, 1.0f);
 	
 	glUniform1f(uniformLocations.at("seaLevel"), seaLevel);
+	glUniform1f(uniformLocations.at("time"), time);
 
 	for (int i = 0; i < MAX_TERRAIN_BLOCKS_TOTAL; i++)
 	{
@@ -115,7 +118,20 @@ void Planet::setSeaLevel(float sl)
 
 void Planet::update(float dt)
 {
+	time += dt;
+	if (time > 600)
+	{
+		time = 0;
+	}
+
 	updateLODBlocks();
+	for (int i = 0; i < MAX_TERRAIN_BLOCKS_TOTAL; i++)
+	{
+		if (terrainBlocks[i].isUsed())
+		{
+			terrainBlocks[i].update(dt);
+		}
+	}
 }
 
 Planet::~Planet()
@@ -137,6 +153,7 @@ void Planet::createShaderProgram()
 	uniformLocations["lightPos"] = glGetUniformLocation(shader.getShaderProgram(), "lightPos");
 	uniformLocations["lightColor"] = glGetUniformLocation(shader.getShaderProgram(), "lightColor");
 	uniformLocations["seaLevel"] = glGetUniformLocation(shader.getShaderProgram(), "seaLevel");
+	uniformLocations["time"] = glGetUniformLocation(shader.getShaderProgram(), "time");
 }
 
 void Planet::updateLODBlocks()
@@ -369,7 +386,8 @@ void Planet::generate()
 			terrainBlocks[i].markUnused();
 		}
 
-		terrainBlocks[0].generate(glm::vec2(0, 0), glm::vec2(heightmap.getWidth(), heightmap.getHeight()), &heightmap, radius, LOW_QUALITY);
+		glm::vec2 start = glm::vec2(heightmap.getWidth() / 2, heightmap.getHeight() / 2);
+		terrainBlocks[0].generate(start, start+glm::vec2(256, 256), &heightmap, radius, 2);
 	}
 }
 

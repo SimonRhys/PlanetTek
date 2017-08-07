@@ -119,6 +119,7 @@ int main()
 	Planet planet = Planet(PLANET_RADIUS, "map.png");
 	planet.loadTexture("grass.png");
 	planet.loadTexture("rock.png");
+	planet.loadTexture("water.png");
 	planet.setPlayerCamera(&CAMERA);
 
 	//Window loop
@@ -128,6 +129,11 @@ int main()
 		GLfloat currentFrame = glfwGetTime();
 		dt = currentFrame - lastFrame;
 		lastFrame = currentFrame;
+
+		if (dt > 2)
+		{
+			dt = 0;
+		}
 
 		//Check if any events have been activiated (key pressed, mouse moved etc.) and call corresponding response functions
 		glfwPollEvents();

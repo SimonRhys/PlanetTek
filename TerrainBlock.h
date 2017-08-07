@@ -7,6 +7,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include "Shader.h"
 #include "Heightmap.h"
+#include "Particles.h"
 
 #define PI 3.14159265358979323846
 #define TWO_PI 6.28318530717958647693
@@ -24,6 +25,7 @@ public:
 	void draw(glm::mat4 proj, glm::mat4 view, float radius);
 	void generate(glm::vec2 start, glm::vec2 end, Heightmap *heightmap, float radius, int lod);
 	void markUnused();
+	void update(float dt);
 
 	bool isUsed();
 
@@ -32,12 +34,6 @@ public:
 
 private:
 	void generateVertices(glm::vec2 start, glm::vec2 end, Heightmap *heightmap, float radius, int lod);
-
-	std::vector<glm::vec3> diamondSquare(glm::vec3 v1, glm::vec3 v2, glm::vec3 v3, glm::vec3 v4);
-	void squareStep(glm::vec3 arr[5][5], int size, float mag);
-	void diamondStep(glm::vec3 arr[5][5], int size, float mag);
-	glm::vec3 diamondAvg(glm::vec3 arr[5][5], glm::vec2 c, int halfSize);
-
 
 	glm::vec3 mapOctohedronToSphere(glm::vec2 coords, Heightmap *heightmap, float radius);
 	glm::vec3 lerp(glm::vec3 v1, glm::vec3 v2, float p);
@@ -56,5 +52,7 @@ private:
 
 	glm::vec2 startPoint;
 	glm::vec2 endPoint;
+
+	Particles particles;
 
 };

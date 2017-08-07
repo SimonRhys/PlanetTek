@@ -48,8 +48,9 @@ private:
 	float heightModifier;
 	float radius;
 	float seaLevel;
+	float time;
 
-	const static int LOW_QUALITY = 16;
+	const static int LOW_QUALITY = 64;
 	const static int MED_QUALITY = 5;
 	const static int HIGH_QUALITY = 2;
 	const static int MAX_TERRAIN_BLOCKS_HQ = 10;
@@ -57,7 +58,7 @@ private:
 	const static int MAX_TERRAIN_BLOCKS_LQ = 25;
 	const static int MAX_TERRAIN_BLOCKS_TOTAL = MAX_TERRAIN_BLOCKS_HQ + MAX_TERRAIN_BLOCKS_MQ + MAX_TERRAIN_BLOCKS_LQ;
 
-	GLuint textures[2];
+	GLuint textures[4];
 	int numTexturesLoaded = 0;
 
 	glm::vec2 BLOCK_SIZE = glm::vec2(5, 5);

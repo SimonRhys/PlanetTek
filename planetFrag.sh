@@ -3,12 +3,14 @@ in GS_OUT {
 	vec3 fragPos;
 	vec3 normal;
 	vec3 texcoord;
+	vec3 ocean;
 } gs_out;
 
 out vec4 colour;
 
 uniform sampler2D texSampler0;
 uniform sampler2D texSampler1;
+uniform sampler2D texSampler2;
 uniform vec3 lightPos; 
 uniform vec3 lightColor;
 uniform float seaLevel;
@@ -27,11 +29,16 @@ void main()
 
 	if(gs_out.texcoord.x < 0 || gs_out.texcoord.y < 0)
 	{
-		objectColor = vec3(0, 0, 1);
+		objectColor = vec3(1, 1, 0);
 	}
 	else
 	{
 		objectColor = texColor.xyz;
+	}
+
+	if(gs_out.ocean.x == 1)
+	{
+		objectColor = texture(texSampler2, gs_out.texcoord.xy).xyz;
 	}
 
     // Ambient

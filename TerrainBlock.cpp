@@ -20,6 +20,8 @@ void TerrainBlock::draw(glm::mat4 proj, glm::mat4 view, float radius)
 	glBindVertexArray(vao);
 	glDrawArrays(GL_TRIANGLES, 0, vertices.size() / 3);
 	glBindVertexArray(0);
+
+	particles.draw();
 }
 
 void TerrainBlock::generate(glm::vec2 start, glm::vec2 end, Heightmap *heightmap, float radius, int lod)
@@ -49,12 +51,19 @@ void TerrainBlock::generate(glm::vec2 start, glm::vec2 end, Heightmap *heightmap
 
 	glBindVertexArray(0);
 
+	//particles.init();
+
 	this->inUse = true;
 }
 
 void TerrainBlock::markUnused()
 {
 	this->inUse = false;
+}
+
+void TerrainBlock::update(float dt)
+{
+	particles.update(dt);
 }
 
 bool TerrainBlock::isUsed()
