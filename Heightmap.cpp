@@ -97,6 +97,8 @@ void Heightmap::load(std::string heightmapFP)
 			float b = heightmap[y*w * 3 + x * 3 + 2];
 
 			float height = (r + g + b) / 3;
+			height -= 128;
+			height /= 128;
 
 			set(x2, y2, height);
 		}

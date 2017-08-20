@@ -7,49 +7,241 @@ Planet::Planet(float radius)
 	this->heightModifier = 1000;
 	this->radius = radius;
 	this->reloading = false;
-	this->seaLevel = 1024 * 1000;
+	this->seaLevel = 1024 * 1050;
 	this->time = 0;
+	heightmap.setHeightModifier(heightModifier);
 	heightmap.create(64);
 	createShaderProgram();
+	createFBOs();
 	generate();
 }
 
 Planet::Planet(float radius, std::string heightmapFP)
 {
-	this->heightModifier = 1000; //radius / heightmap.getSize()
+	this->heightModifier = 3500; //radius / heightmap.getSize()
 	this->radius = radius;
 	this->reloading = false;
-	this->seaLevel = 1024 * 1000;
+	this->seaLevel = 1024 * 525;
 	this->time = 0;
 	heightmap.setHeightModifier(heightModifier); 
 	heightmap.load(heightmapFP);
 	createShaderProgram();
+	createFBOs();
 	generate();	
 }
 
-void Planet::draw(glm::mat4 proj, glm::mat4 view) 
+void Planet::createFBOs()
 {
+	glGenFramebuffers(1, &reflectionFBO);
+	glGenFramebuffers(1, &refractionFBO);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, reflectionFBO);
+	glDrawBuffer(GL_COLOR_ATTACHMENT0);
+	reflectionTextureID = createTextureAttachment(reflectionResolution.x, reflectionResolution.y);
+	reflectionDepthBuffer = createDepthBufferAttachment(reflectionResolution.x, reflectionResolution.y);
+
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+	{
+		std::cout << "REFLECTION FRAMEBUFFER NOT COMPLETE" << std::endl;
+	}
+
+	glBindFramebuffer(GL_FRAMEBUFFER, refractionFBO);
+	glDrawBuffer(GL_COLOR_ATTACHMENT0);
+	refractionTextureID = createTextureAttachment(refractionResolution.x, refractionResolution.y);
+	refractionDepthTextureID = createDepthTextureAttachment(refractionResolution.x, refractionResolution.y);
+
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+	{
+		std::cout << "REFRACTION FRAMEBUFFER NOT COMPLETE" << std::endl;
+	}
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	glUseProgram(shader.getShaderProgram());
+	glUniform1i(glGetUniformLocation(shader.getShaderProgram(), "reflectionTexture"), numTexturesLoaded);
+	textures[numTexturesLoaded++] = reflectionTextureID;
+	glUniform1i(glGetUniformLocation(shader.getShaderProgram(), "refractionTexture"), numTexturesLoaded);
+	textures[numTexturesLoaded++] = refractionTextureID;
+	glUseProgram(0);
+}
+
+
+GLuint Planet::createTextureAttachment(int width, int height)
+{
+	GLuint texture;
+	glGenTextures(1, &texture);
+	glBindTexture(GL_TEXTURE_2D, texture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, texture, 0);
+
+	return texture;
+}
+
+GLuint Planet::createDepthTextureAttachment(int width, int height)
+{
+	GLuint texture;
+	glGenTextures(1, &texture);
+	glBindTexture(GL_TEXTURE_2D, texture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, texture, 0);
+
+	return texture;
+}
+
+GLuint Planet::createDepthBufferAttachment(int width, int height)
+{
+	GLuint depthBuffer;
+	glGenRenderbuffers(1, &depthBuffer);
+	glBindRenderbuffer(GL_RENDERBUFFER, depthBuffer);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthBuffer);
+
+	return depthBuffer;
+}
+
+void Planet::draw(glm::mat4 proj, glm::vec3 viewPos, glm::vec2 viewRotation) 
+{
+	glm::mat4 view = glm::rotate(viewRotation.x, glm::vec3(1, 0, 0));
+	view = view * glm::rotate(viewRotation.y, glm::vec3(0, 1, 0));
+	view = view * glm::translate(viewPos);
+
+	float distance = 2.f * (glm::length(viewPos) - seaLevel);
+	glm::vec3 dir = glm::normalize(viewPos);
+	
+	glm::mat4 reflectionView = glm::rotate(-viewRotation.x, glm::vec3(1, 0, 0));
+	reflectionView = reflectionView * glm::rotate(viewRotation.y, glm::vec3(0, 1, 0));
+	reflectionView = reflectionView * glm::translate(viewPos-dir*distance);
+
+	glEnable(GL_CLIP_DISTANCE0);
+
+	float waveSpeed = time * 0.02;
+
+	glUseProgram(shader.getShaderProgram());
+
+	glUniformMatrix4fv(uniformLocations.at("projection"), 1, GL_FALSE, glm::value_ptr(proj));
+	glUniformMatrix4fv(uniformLocations.at("view"), 1, GL_FALSE, glm::value_ptr(reflectionView));
+	glUniformMatrix4fv(uniformLocations.at("model"), 1, GL_FALSE, glm::value_ptr(glm::mat4(1)));
+
+	glUniform3f(uniformLocations.at("lightPos"), 0, radius * 1.5, 0);
+	glUniform3f(uniformLocations.at("lightColor"), 1.0f, 1.0f, 1.0f);
+	glUniform3f(uniformLocations.at("eyePos"), -playerCamera->x, -playerCamera->y, -playerCamera->z);
+	glUniform3f(uniformLocations.at("skyColour"), 0.298, 0.5, 0.5);
+	
+	glUniform1f(uniformLocations.at("seaLevel"), seaLevel);
+	glUniform1f(uniformLocations.at("waveSpeed"), waveSpeed);
+
+	glUniform1i(uniformLocations.at("renderSea"), 0);
+	glUniform1i(uniformLocations.at("reflection"), 1);
+	glUniform1i(uniformLocations.at("refraction"), 0);
+
+	for (int i = 0; i < numTexturesLoaded; i++)
+	{
+		glActiveTexture(GL_TEXTURE0 + i);
+		glBindTexture(GL_TEXTURE_2D, textures[i]);
+	}
+
+	//DRAW EVERYTHING BUT WATER FOR REFLECTION
+	glBindFramebuffer(GL_FRAMEBUFFER, reflectionFBO);
+	glViewport(0, 0, reflectionResolution.x, reflectionResolution.y);
+	// Clear the colorbuffer
+	glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	for (int i = 0; i < MAX_TERRAIN_BLOCKS_TOTAL; i++)
+	{
+		terrainBlocks[i].draw(proj, reflectionView, TerrainBlock::HIGH_QUALITY);
+	}
+
+	glUseProgram(0);
+
+	skybox.draw(proj, reflectionView);
+
+	//DRAW EVERYTHING BUT WATER FOR REFRACTION
+
 	glUseProgram(shader.getShaderProgram());
 
 	glUniformMatrix4fv(uniformLocations.at("projection"), 1, GL_FALSE, glm::value_ptr(proj));
 	glUniformMatrix4fv(uniformLocations.at("view"), 1, GL_FALSE, glm::value_ptr(view));
 	glUniformMatrix4fv(uniformLocations.at("model"), 1, GL_FALSE, glm::value_ptr(glm::mat4(1)));
 
-	glUniform3f(uniformLocations.at("lightPos"), -radius * 1.5, radius * 1.5, radius * 1.5);
+	glUniform3f(uniformLocations.at("lightPos"), 0, radius * 1.5, 0);
 	glUniform3f(uniformLocations.at("lightColor"), 1.0f, 1.0f, 1.0f);
-	
-	glUniform1f(uniformLocations.at("seaLevel"), seaLevel);
-	glUniform1f(uniformLocations.at("time"), time);
+	glUniform3f(uniformLocations.at("eyePos"), -playerCamera->x, -playerCamera->y, -playerCamera->z);
+	glUniform3f(uniformLocations.at("skyColour"), 0.298, 0.5, 0.5);
 
+	glUniform1f(uniformLocations.at("seaLevel"), seaLevel);
+	glUniform1f(uniformLocations.at("waveSpeed"), waveSpeed);
+
+	glUniform1i(uniformLocations.at("renderSea"), 0);
+	glUniform1i(uniformLocations.at("reflection"), 0);
+	glUniform1i(uniformLocations.at("refraction"), 1);
+
+	for (int i = 0; i < numTexturesLoaded; i++)
+	{
+		glActiveTexture(GL_TEXTURE0 + i);
+		glBindTexture(GL_TEXTURE_2D, textures[i]);
+	}
+
+	glBindFramebuffer(GL_FRAMEBUFFER, refractionFBO);
+	glViewport(0, 0, refractionResolution.x, refractionResolution.y);
+	// Clear the colorbuffer
+	glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	for (int i = 0; i < MAX_TERRAIN_BLOCKS_TOTAL; i++)
 	{
-		terrainBlocks[i].draw(proj, view, radius);
+		terrainBlocks[i].draw(proj, view, TerrainBlock::HIGH_QUALITY);
 	}
 
 	glUseProgram(0);
+
+	skybox.draw(proj, view);
+
+	glDisable(GL_CLIP_DISTANCE0);
+
+	//DRAW EVERYTHING
+	glUseProgram(shader.getShaderProgram());
+
+	glUniformMatrix4fv(uniformLocations.at("projection"), 1, GL_FALSE, glm::value_ptr(proj));
+	glUniformMatrix4fv(uniformLocations.at("view"), 1, GL_FALSE, glm::value_ptr(view));
+	glUniformMatrix4fv(uniformLocations.at("model"), 1, GL_FALSE, glm::value_ptr(glm::mat4(1)));
+
+	glUniform3f(uniformLocations.at("lightPos"), 0, radius * 1.5, 0);
+	glUniform3f(uniformLocations.at("lightColor"), 1.0f, 1.0f, 1.0f);
+	glUniform3f(uniformLocations.at("eyePos"), -playerCamera->x, -playerCamera->y, -playerCamera->z);
+	glUniform3f(uniformLocations.at("skyColour"), 0.298, 0.5, 0.5);
+
+	glUniform1f(uniformLocations.at("seaLevel"), seaLevel);
+	glUniform1f(uniformLocations.at("waveSpeed"), waveSpeed);
+
+	glUniform1i(uniformLocations.at("renderSea"), 1);
+	glUniform1i(uniformLocations.at("reflection"), 0);
+	glUniform1i(uniformLocations.at("refraction"), 0);
+
+	for (int i = 0; i < numTexturesLoaded; i++)
+	{
+		glActiveTexture(GL_TEXTURE0 + i);
+		glBindTexture(GL_TEXTURE_2D, textures[i]);
+	}
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glViewport(0, 0, 1200, 900);
+	// Clear the colorbuffer
+	glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	for (int i = 0; i < MAX_TERRAIN_BLOCKS_TOTAL; i++)
+	{
+		terrainBlocks[i].draw(proj, view, TerrainBlock::HIGH_QUALITY);
+	}
+
+	glUseProgram(0);
+
+	skybox.draw(proj, view);
 }
 
-void Planet::loadTexture(std::string filePath)
+void Planet::loadTexture(std::string filePath, std::string textureName)
 {
 	int w, h, channels;
 	unsigned char *image = SOIL_load_image(filePath.c_str(), &w, &h, &channels, SOIL_LOAD_RGB);
@@ -65,12 +257,10 @@ void Planet::loadTexture(std::string filePath)
 
 	glGenTextures(1, &textures[numTexturesLoaded]);
 
-	glActiveTexture(GL_TEXTURE0 + numTexturesLoaded);
 	glBindTexture(GL_TEXTURE_2D, textures[numTexturesLoaded]);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
-	std::string loc = "texSampler" + std::to_string(numTexturesLoaded);
 	glUseProgram(shader.getShaderProgram());
-	glUniform1i(glGetUniformLocation(shader.getShaderProgram(), loc.c_str()), numTexturesLoaded);
+	glUniform1i(glGetUniformLocation(shader.getShaderProgram(), textureName.c_str()), numTexturesLoaded);
 	glUseProgram(0);
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -78,10 +268,15 @@ void Planet::loadTexture(std::string filePath)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-	glGenerateMipmap(GL_TEXTURE_2D);
+	//glGenerateMipmap(GL_TEXTURE_2D);
 
 	numTexturesLoaded++;
 	SOIL_free_image_data(image);
+}
+
+void Planet::loadSkybox(std::vector<std::string> filePaths)
+{
+	skybox.loadTextures(filePaths);
 }
 
 void Planet::regenerate()
@@ -152,12 +347,21 @@ void Planet::createShaderProgram()
 	uniformLocations["model"] = glGetUniformLocation(shader.getShaderProgram(), "model");
 	uniformLocations["lightPos"] = glGetUniformLocation(shader.getShaderProgram(), "lightPos");
 	uniformLocations["lightColor"] = glGetUniformLocation(shader.getShaderProgram(), "lightColor");
+	uniformLocations["eyePos"] = glGetUniformLocation(shader.getShaderProgram(), "eyePos");
 	uniformLocations["seaLevel"] = glGetUniformLocation(shader.getShaderProgram(), "seaLevel");
-	uniformLocations["time"] = glGetUniformLocation(shader.getShaderProgram(), "time");
+	uniformLocations["waveSpeed"] = glGetUniformLocation(shader.getShaderProgram(), "waveSpeed");
+	uniformLocations["renderSea"] = glGetUniformLocation(shader.getShaderProgram(), "renderSea");
+	uniformLocations["skyColour"] = glGetUniformLocation(shader.getShaderProgram(), "skyColour");
+	uniformLocations["reflectionTexture"] = glGetUniformLocation(shader.getShaderProgram(), "reflectionTexture");
+	uniformLocations["refractionTexture"] = glGetUniformLocation(shader.getShaderProgram(), "refractionTexture");
+	uniformLocations["reflection"] = glGetUniformLocation(shader.getShaderProgram(), "reflection");
+	uniformLocations["refraction"] = glGetUniformLocation(shader.getShaderProgram(), "refraction");
 }
 
 void Planet::updateLODBlocks()
 {
+	return; 
+
 	if (reloading || currRenderMode == WHOLE)
 	{
 		return;
@@ -328,6 +532,8 @@ void Planet::updateLODBlocks()
 	}
 }
 
+
+
 void Planet::generate()
 {
 	if (currRenderMode == PARTIAL)
@@ -341,9 +547,9 @@ void Planet::generate()
 
 		int blockCount = 0;
 
-		for (int i = -3; i <= 3; i++)
+		for (int i = 0; i <= 0; i++) // -3 -> 3
 		{
-			for (int j = -3; j <= 3; j++)
+			for (int j = 0; j <= 0; j++) // -3 -> 3
 			{
 				glm::vec2 start = centre;
 				glm::vec2 end;
@@ -358,22 +564,8 @@ void Planet::generate()
 
 				glm::vec2 distanceVector = glm::abs(glm::vec2(j, i));
 				int distanceFromCentre = glm::max(distanceVector.x, distanceVector.y);
-				int lod;
 
-				if (distanceFromCentre == 3)
-				{
-					lod = LOW_QUALITY;
-				}
-				else if (distanceFromCentre == 2)
-				{
-					lod = MED_QUALITY;
-				}
-				else
-				{
-					lod = HIGH_QUALITY;
-				}
-
-				terrainBlocks[blockCount].generate(start, end, &heightmap, radius, lod);
+				terrainBlocks[blockCount].generate(start, end, &heightmap, radius);
 				lodMap.push_back(&terrainBlocks[blockCount]);
 				blockCount++;
 			}
@@ -387,7 +579,7 @@ void Planet::generate()
 		}
 
 		glm::vec2 start = glm::vec2(heightmap.getWidth() / 2, heightmap.getHeight() / 2);
-		terrainBlocks[0].generate(start, start+glm::vec2(256, 256), &heightmap, radius, 2);
+		terrainBlocks[0].generate(start, start+glm::vec2(256, 256), &heightmap, radius);
 	}
 }
 
@@ -408,7 +600,7 @@ void Planet::reloadLODs()
 				glm::vec2 startPoint = currBlock->getStartPoint();
 				glm::vec2 endPoint = currBlock->getEndPoint();
 
-				terrainBlocks[j].generate(startPoint, endPoint, &heightmap, radius, regenMap[i].second);
+				terrainBlocks[j].generate(startPoint, endPoint, &heightmap, radius);
 				currBlock->markUnused();
 				
 				lodMap[regenMap[i].first] = &terrainBlocks[j];
@@ -450,7 +642,7 @@ void Planet::reloadLODs()
 				startPoint += genMap[i].second;
 				endPoint += genMap[i].second;
 
-				terrainBlocks[j].generate(startPoint, endPoint, &heightmap, radius, LOW_QUALITY);
+				terrainBlocks[j].generate(startPoint, endPoint, &heightmap, radius);
 				currBlock->markUnused();
 
 				lodMap[genMap[i].first] = &terrainBlocks[j];

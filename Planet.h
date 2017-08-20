@@ -9,6 +9,7 @@
 #include "Shader.h"
 #include "TerrainBlock.h"
 #include "Heightmap.h"
+#include "Skybox.h"
 
 #define PI 3.14159265358979323846
 #define TWO_PI 6.28318530717958647693
@@ -23,8 +24,9 @@ public:
 	Planet(float radius, std::string heightmapFP);
 	~Planet();
 
-	void draw(glm::mat4 proj, glm::mat4 view);
-	void loadTexture(std::string filePath);
+	void draw(glm::mat4 proj, glm::vec3 viewPos, glm::vec2 viewRotation);
+	void loadTexture(std::string filePath, std::string textureName);
+	void loadSkybox(std::vector<std::string> filePaths);
 	void regenerate();
 	void setPlayerCamera(glm::vec3 *playerCamera);
 	void setRenderMode(RenderMode rm);
@@ -37,6 +39,10 @@ public:
 private:
 
 	void createShaderProgram();
+	void createFBOs();
+	GLuint createTextureAttachment(int width, int height);
+	GLuint createDepthTextureAttachment(int width, int height);
+	GLuint createDepthBufferAttachment(int width, int height);
 	void updateLODBlocks();
 	void generate();
 	void reloadLODs();
@@ -58,14 +64,15 @@ private:
 	const static int MAX_TERRAIN_BLOCKS_LQ = 25;
 	const static int MAX_TERRAIN_BLOCKS_TOTAL = MAX_TERRAIN_BLOCKS_HQ + MAX_TERRAIN_BLOCKS_MQ + MAX_TERRAIN_BLOCKS_LQ;
 
-	GLuint textures[4];
+	GLuint textures[16];
 	int numTexturesLoaded = 0;
 
-	glm::vec2 BLOCK_SIZE = glm::vec2(5, 5);
+	glm::vec2 BLOCK_SIZE = glm::vec2(256, 256);
 
 	Heightmap heightmap;
 
 	Shader shader;
+	Skybox skybox;
 
 	std::map<std::string, GLuint> uniformLocations;
 
@@ -77,7 +84,17 @@ private:
 
 	glm::vec3 *playerCamera;
 
-	RenderMode currRenderMode = WHOLE;
+	RenderMode currRenderMode = PARTIAL;
+
+	GLuint reflectionFBO;
+	GLuint refractionFBO;
+	GLuint reflectionTextureID;
+	GLuint refractionTextureID;
+	GLuint refractionDepthTextureID;
+	GLuint reflectionDepthBuffer;
+
+	glm::vec2 reflectionResolution = glm::vec2(800, 600);
+	glm::vec2 refractionResolution = glm::vec2(800, 600);
 
 };
 

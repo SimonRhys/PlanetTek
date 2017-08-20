@@ -22,8 +22,8 @@ public:
 	TerrainBlock();
 	~TerrainBlock();
 
-	void draw(glm::mat4 proj, glm::mat4 view, float radius);
-	void generate(glm::vec2 start, glm::vec2 end, Heightmap *heightmap, float radius, int lod);
+	void draw(glm::mat4 proj, glm::mat4 view, int lod);
+	void generate(glm::vec2 start, glm::vec2 end, Heightmap *heightmap, float radius);
 	void markUnused();
 	void update(float dt);
 
@@ -32,8 +32,13 @@ public:
 	glm::vec2 getStartPoint();
 	glm::vec2 getEndPoint();
 
+	const static int LOW_QUALITY = 4;
+	const static int MED_QUALITY = 2;
+	const static int HIGH_QUALITY = 1;
+
 private:
-	void generateVertices(glm::vec2 start, glm::vec2 end, Heightmap *heightmap, float radius, int lod);
+	void generateVertices(glm::vec2 start, glm::vec2 end, Heightmap *heightmap, float radius);
+	void createVBO(glm::vec2 start, glm::vec2 end, std::vector<glm::vec3> *vertexList, int lod);
 
 	glm::vec3 mapOctohedronToSphere(glm::vec2 coords, Heightmap *heightmap, float radius);
 	glm::vec3 lerp(glm::vec3 v1, glm::vec3 v2, float p);
@@ -42,13 +47,20 @@ private:
 
 	bool inUse;
 
-	GLuint vao;
-	GLuint vbo;
+	GLuint vaoLow;
+	GLuint vboLow;
+
+	GLuint vaoMed;
+	GLuint vboMed;
+
+	GLuint vaoHigh;
+	GLuint vboHigh;
 
 	int LOD;
 
-	std::vector<glm::vec3> vertices;
-	std::vector<GLuint> indices;
+	std::vector<glm::vec3> verticesLow;
+	std::vector<glm::vec3> verticesMed;
+	std::vector<glm::vec3> verticesHigh;
 
 	glm::vec2 startPoint;
 	glm::vec2 endPoint;

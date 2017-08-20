@@ -43,10 +43,10 @@ float SPEED = 1000.0f;
 float ROTATE_SPEED = 5.0f;
 float MOUSE_ROTATE_SPEED = 0.01;
 float PLANET_RADIUS = 1024*1000;
-float SEA_LEVEL = 1024 * 1100;
+float SEA_LEVEL = 1023000; //1024 * 1100;
 float HEIGHT_MODIFIER = 1000;
 
-glm::vec3 CAMERA = glm::vec3(0, -1024 * 1100, 0); //1024 * 1100 = SeaLevel
+glm::vec3 CAMERA = glm::vec3(0, -1024 * 1000, 0); //1024 * 1100 = SeaLevel
 glm::vec2 CAMERA_ROTATION(0, -PI / 2);
 
 std::map<std::string, GLuint> UNIFORM_LOCATIONS;
@@ -117,10 +117,21 @@ int main()
 	GLfloat dt = glfwGetTime();
 
 	Planet planet = Planet(PLANET_RADIUS, "map.png");
-	planet.loadTexture("grass.png");
-	planet.loadTexture("rock.png");
-	planet.loadTexture("water.png");
+	planet.loadTexture("grass.png", "grassTexture");
+	planet.loadTexture("rock.png", "rockTexture");
+	planet.loadTexture("waterDUDV.png", "waterDUDV");
+	//planet.loadTexture("waternormals.png", "normalMap");
 	planet.setPlayerCamera(&CAMERA);
+	planet.setSeaLevel(SEA_LEVEL);
+
+	std::vector<std::string> filePaths;
+	filePaths.push_back("right.png");
+	filePaths.push_back("left.png");
+	filePaths.push_back("top.png");
+	filePaths.push_back("bottom.png");
+	filePaths.push_back("back.png");
+	filePaths.push_back("front.png");
+	planet.loadSkybox(filePaths);
 
 	//Window loop
 	while (!glfwWindowShouldClose(window))
@@ -142,10 +153,6 @@ int main()
 
 		planet.update(dt);
 
-		// Clear the colorbuffer
-		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
 		//Setup the Projection and View matricies
 		glm::mat4 projection;
 		if (glm::length(CAMERA) < 1024 * 1200)
@@ -164,7 +171,7 @@ int main()
 		glm::mat4 view = glm::rotate(CAMERA_ROTATION.x, glm::vec3(1, 0, 0));
 		view = view * glm::rotate(CAMERA_ROTATION.y, glm::vec3(0, 1, 0));
 		view = view * glm::translate(CAMERA);
-		planet.draw(projection, view);
+		planet.draw(projection, CAMERA, CAMERA_ROTATION);
 
 		//Render the Debug GUI
 		if (DEBUG_MODE)
