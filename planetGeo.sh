@@ -28,8 +28,8 @@ uniform int renderSea;
 uniform int reflection;
 uniform int refraction;
 
-const float density = 0.00001;
-const float gradient = 5.0;
+const float density = 0.0000001;
+const float gradient = 2.0;
 
 vec3 calculateVisibility(vec4 p)
 {

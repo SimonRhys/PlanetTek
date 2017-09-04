@@ -42,11 +42,11 @@ glm::vec2 LAST_MOUSE_POS(WIDTH/2, HEIGHT/2);
 float SPEED = 1000.0f;
 float ROTATE_SPEED = 5.0f;
 float MOUSE_ROTATE_SPEED = 0.01;
-float PLANET_RADIUS = 1024*1000;
-float SEA_LEVEL = 1023000; //1024 * 1100;
-float HEIGHT_MODIFIER = 1000;
+float PLANET_RADIUS = 6371000; 
+float SEA_LEVEL = 6370000; //1024 * 1100;
+float HEIGHT_MODIFIER = 18000;
 
-glm::vec3 CAMERA = glm::vec3(0, -1024 * 1000, 0); //1024 * 1100 = SeaLevel
+glm::vec3 CAMERA = glm::vec3(0, -6371000, 0); // -6371000
 glm::vec2 CAMERA_ROTATION(0, -PI / 2);
 
 std::map<std::string, GLuint> UNIFORM_LOCATIONS;
@@ -116,22 +116,33 @@ int main()
 	GLfloat lastFrame = glfwGetTime();
 	GLfloat dt = glfwGetTime();
 
-	Planet planet = Planet(PLANET_RADIUS, "map.png");
-	planet.loadTexture("grass.png", "grassTexture");
-	planet.loadTexture("rock.png", "rockTexture");
-	planet.loadTexture("waterDUDV.png", "waterDUDV");
+	Planet planet(PLANET_RADIUS, "textures/map.png");
+	planet.setWindowSize(&WIDTH, &HEIGHT);
+	planet.loadTexture("textures/grass.png", "grassTexture");
+	planet.loadTexture("textures/rock.png", "rockTexture");
+	planet.loadTexture("textures/sand.png", "sandTexture");
+	planet.loadTexture("textures/waterDUDV.png", "waterDUDV");
 	//planet.loadTexture("waternormals.png", "normalMap");
 	planet.setPlayerCamera(&CAMERA);
 	planet.setSeaLevel(SEA_LEVEL);
 
 	std::vector<std::string> filePaths;
-	filePaths.push_back("right.png");
-	filePaths.push_back("left.png");
-	filePaths.push_back("top.png");
-	filePaths.push_back("bottom.png");
-	filePaths.push_back("back.png");
-	filePaths.push_back("front.png");
-	planet.loadSkybox(filePaths);
+	filePaths.push_back("textures/skyboxDay/right.png");
+	filePaths.push_back("textures/skyboxDay/left.png");
+	filePaths.push_back("textures/skyboxDay/top.png");
+	filePaths.push_back("textures/skyboxDay/bottom.png");
+	filePaths.push_back("textures/skyboxDay/back.png");
+	filePaths.push_back("textures/skyboxDay/front.png");
+	planet.loadSkyboxDayTextures(filePaths);
+
+	filePaths.clear();
+	filePaths.push_back("textures/skyboxNight/right.png");
+	filePaths.push_back("textures/skyboxNight/left.png");
+	filePaths.push_back("textures/skyboxNight/top.png");
+	filePaths.push_back("textures/skyboxNight/bottom.png");
+	filePaths.push_back("textures/skyboxNight/back.png");
+	filePaths.push_back("textures/skyboxNight/front.png");
+	planet.loadSkyboxNightTextures(filePaths);
 
 	//Window loop
 	while (!glfwWindowShouldClose(window))
@@ -155,9 +166,9 @@ int main()
 
 		//Setup the Projection and View matricies
 		glm::mat4 projection;
-		if (glm::length(CAMERA) < 1024 * 1200)
+		/*if (glm::length(CAMERA) < 1024 * 1200)
 		{
-			projection = glm::perspective(45.0f, ASPECT, 10.0f, 1300000.0f);
+			projection = glm::perspective(45.0f, ASPECT, 10.0f, 130000.0f);
 		}
 		else if (glm::length(CAMERA) < 1024 * 2000)
 		{
@@ -166,7 +177,10 @@ int main()
 		else
 		{
 			projection = glm::perspective(45.0f, ASPECT, 1000.0f, 6000000.0f);
-		}
+		}*/
+
+		projection = glm::perspective(45.0f, ASPECT, 1.0f, 48000.0f);
+
 
 		glm::mat4 view = glm::rotate(CAMERA_ROTATION.x, glm::vec3(1, 0, 0));
 		view = view * glm::rotate(CAMERA_ROTATION.y, glm::vec3(0, 1, 0));
@@ -204,7 +218,7 @@ int main()
 				}
 			}
 			ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-			ImGui::SliderFloat(" Camera Speed", &SPEED, 0, 100000);
+			ImGui::InputFloat(" Camera Speed", &SPEED);
 
 			if (WIREFRAME)
 			{

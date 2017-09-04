@@ -5,6 +5,10 @@
 Heightmap::Heightmap()
 {
 	srand(time(NULL));
+	noise.SetNoiseType(FastNoise::SimplexFractal);
+	noise.SetSeed(rand()%10000);
+	noise.SetFrequency(0.002);
+	noise.SetFractalOctaves(4);
 	heightModifier = 1;
 }
 
@@ -12,21 +16,6 @@ void Heightmap::create(int s)
 {
 	SIZE = s;
 	HALF_SIZE = s / 2;
-
-	HEIGHT_MAP = new float[SIZE*SIZE];
-
-	for (int i = 0; i < SIZE; i++)
-	{
-		for (int j = 0; j < SIZE; j++)
-		{
-			float r = rand() % 1000 + 500;
-			float g = rand() % 1000 + 500;
-			float b = rand() % 1000 + 500;
-
-			float height = (r + g + b) / 3;
-			HEIGHT_MAP[i*SIZE + j] = height;
-		}
-	}
 
 	std::cout << "Created Heightmap successfully!" << std::endl;
 }
@@ -39,7 +28,13 @@ float Heightmap::get(int x, int y)
 	x = x%SIZE;
 	y = y%SIZE;
 
-	return HEIGHT_MAP[y*SIZE + x] * heightModifier;
+	float height = noise.GetNoise(x, y) * heightModifier;
+
+	//height = height * 1.1;
+
+	//height = glm::clamp(height, -200.f, 200.f);
+
+	return height; //HEIGHT_MAP[y*SIZE + x] * heightModifier;
 }
 
 float Heightmap::get(glm::vec2 p)

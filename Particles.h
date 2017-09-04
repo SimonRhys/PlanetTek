@@ -14,11 +14,12 @@ public:
 	~Particles();
 
 	void draw();
-	void init();
+	void init(GLfloat *width, GLfloat *height);
 	void update(float dt);
 
 private:
 	void createShaderProgram();
+	void createParticles(int n);
 
 	Shader shader;
 	std::map<std::string, GLuint> uniformLocations;
@@ -36,10 +37,10 @@ private:
 	GLuint particleColourBuffer;
 
 	GLfloat vertices[12] = {
-		-0.05f, -0.05f, 0.0f,
-		0.05f, -0.05f, 0.0f,
-		-0.05f, 0.05f, 0.0f,
-		0.05f, 0.05f, 0.0f,
+		-1.f, -1.f, 0.0f,
+		1.f, -1.f, 0.0f,
+		-1.f, 1.f, 0.0f,
+		1.f, 1.f, 0.0f,
 	};
 	
 	const static int MAX_PARTICLES = 10000;
@@ -52,6 +53,8 @@ private:
 	int lastUsedParticle = 0;
 
 	bool initialised = false;
+	GLfloat *windowWidth;
+	GLfloat *windowHeight;
 
 };
 

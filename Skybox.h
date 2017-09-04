@@ -23,17 +23,31 @@ public:
 	~Skybox();
 
 	void draw(glm::mat4 projection, glm::mat4 view);
-	
-	bool loadTextures(std::vector<std::string> filePaths);
+	void setDayLength(float dayLength);
+	void setNightLength(float nightLength);
+	void update(float dt);
+
+	bool loadDayTextures(std::vector<std::string> filePaths);
+	bool loadNightTextures(std::vector<std::string> filePaths);
 
 private:
+	GLuint loadTextures(std::vector<std::string> filePaths);
 
 	Shader shader;
 	std::map<std::string, GLuint> UNIFORM_LOCATIONS;
 
 	GLuint vao;
 	GLuint vbo;
-	GLuint texture;
+	GLuint dayTexture = -1;
+	GLuint nightTexture = -1;
+
+	float time;
+	float dayLength = 60;
+	float nightLength = 45;
+	float rotation;
+	float rotationSpeed = 300;
+
+	bool dayTime = true;
 
 	float vertices[108] = {
 		// positions          

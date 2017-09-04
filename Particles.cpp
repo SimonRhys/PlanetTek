@@ -15,12 +15,13 @@ void Particles::draw()
 
 	glUseProgram(shader.getShaderProgram());
 
-	/*glm::mat4 proj = glm::mat4(1); //glm::ortho(0, 800, 0, 600);
+	glm::mat4 proj = glm::ortho(0, (int)*windowWidth, 0, (int)*windowHeight);
 	glm::mat4 view = glm::mat4(1);
+	glm::mat4 model = glm::mat4(1);
 
-	glUniformMatrix4fv(uniformLocations.at("projection"), 1, GL_FALSE, glm::value_ptr(proj));
-	glUniformMatrix4fv(uniformLocations.at("view"), 1, GL_FALSE, glm::value_ptr(view));*/
-	glUniformMatrix4fv(uniformLocations.at("model"), 1, GL_FALSE, glm::value_ptr(glm::scale(glm::vec3(0.05))));
+	glUniformMatrix4fv(uniformLocations["projection"], 1, GL_FALSE, glm::value_ptr(proj));
+	glUniformMatrix4fv(uniformLocations["view"], 1, GL_FALSE, glm::value_ptr(view));
+	glUniformMatrix4fv(uniformLocations["model"], 1, GL_FALSE, glm::value_ptr(model));
 
 	glBindVertexArray(vao);
 
@@ -37,8 +38,11 @@ void Particles::draw()
 	glUseProgram(0);
 }
 
-void Particles::init()
+void Particles::init(GLfloat *width, GLfloat *height)
 {
+	windowWidth = width;
+	windowHeight = height;
+
 	glGenVertexArrays(1, &vao);
 	glGenBuffers(1, &vertexBuffer);
 	glGenBuffers(1, &particlePositionBuffer);
@@ -78,28 +82,7 @@ void Particles::init()
 	positionData = new glm::vec3[MAX_PARTICLES];
 	colourData = new unsigned char[MAX_PARTICLES * 3];
 
-	float w = 0.15;
-	float h = 0;
-
-	for (int i = 0; i < MAX_PARTICLES; i++)
-	{
-
-		Particle& p = particleContainer[i];
-
-		p.life = 5;
-		p.pos = glm::vec3(-20+w, 10+h, 0);
-		p.r = 150;
-		p.g = 200;
-		p.b = 240;
-
-		w += 1;
-
-		if (i % 100 == 0 && i != 0)
-		{
-			h += 1;
-			w = 0;
-		}
-	}
+	createParticles(1000);
 
 	createShaderProgram();
 
@@ -126,8 +109,8 @@ void Particles::update(float dt)
 			if (p.life > 0.0f) 
 			{
 
-				p.speed = glm::vec3(0.0f, -9.81f, 0.0f) * (float)dt * 1500.f;
-				p.pos += p.speed * (float)dt;
+				p.speed = glm::vec3(0.0f, -9.81f, 0.0f) * dt * 1500.f;
+				p.pos += p.speed * dt;
 
 				positionData[particleCount] = p.pos;
 
@@ -146,6 +129,8 @@ Particles::~Particles()
 {
 	glDeleteVertexArrays(1, &vao);
 	glDeleteBuffers(1, &vertexBuffer);
+	glDeleteBuffers(1, &particlePositionBuffer);
+	glDeleteBuffers(1, &particleColourBuffer);
 }
 
 //PRIVATE
@@ -158,4 +143,33 @@ void Particles::createShaderProgram()
 	uniformLocations["projection"] = glGetUniformLocation(shader.getShaderProgram(), "projection");
 	uniformLocations["view"] = glGetUniformLocation(shader.getShaderProgram(), "view");
 	uniformLocations["model"] = glGetUniformLocation(shader.getShaderProgram(), "model");
+}
+
+void Particles::createParticles(int n)
+{
+	int numCreated = 0;
+	for (int i = 0; i < MAX_PARTICLES; i++)
+	{
+		if (numCreated == n)
+		{
+			return;
+		}
+
+		int w = rand() % (int)*windowWidth;
+		int h = rand() % 100;
+
+		Particle& p = particleContainer[i];
+
+		if (p.life <= 0)
+		{
+			p.life = 5;
+			p.pos = glm::vec3(w, -h, 0);
+
+			p.r = 150;
+			p.g = 200;
+			p.b = 240;
+
+			numCreated++;
+		}
+	}
 }
