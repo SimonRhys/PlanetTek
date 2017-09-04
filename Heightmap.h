@@ -8,6 +8,8 @@
 #include <SOIL/SOIL.h>
 #include <glm/glm.hpp>
 
+#include "FastNoise.h"
+
 class Heightmap
 {
 public:
@@ -32,7 +34,7 @@ private:
 	void diamondStep(int x, int y, int size, float value);
 	void diamondSquare(int stepsize, float scale);
 
-
+	FastNoise noise;
 
 	float *HEIGHT_MAP;
 	float heightModifier;

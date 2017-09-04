@@ -14,6 +14,7 @@ out vec4 colour;
 
 uniform sampler2D grassTexture;
 uniform sampler2D rockTexture;
+uniform sampler2D sandTexture;
 uniform sampler2D reflectionTexture;
 uniform sampler2D refractionTexture;
 uniform sampler2D waterDUDV;
@@ -74,16 +75,31 @@ void main()
 	}
 	else 
 	{
-		float minHeight = seaLevel*1.1;
-		float maxHeight = seaLevel*1.2;
-		float scaleFactor = (length(gs_out.fragPos) - minHeight) / (maxHeight - minHeight);
-		scaleFactor = min(scaleFactor, 1);
-		scaleFactor = max(scaleFactor, 0);
+		vec4 texColor;
 
-		vec4 texColor = mix(texture(grassTexture, gs_out.texcoord.xy), texture(rockTexture, gs_out.texcoord.xy), scaleFactor);
+		if(length(gs_out.fragPos) >= seaLevel)
+		{
+			float minHeight = seaLevel*1.1;
+			float maxHeight = seaLevel*1.2;
+			float scaleFactor = (length(gs_out.fragPos) - minHeight) / (maxHeight - minHeight);
+			scaleFactor = min(scaleFactor, 1);
+			scaleFactor = max(scaleFactor, 0);
+
+			texColor = mix(texture(grassTexture, gs_out.texcoord.xy), texture(rockTexture, gs_out.texcoord.xy), scaleFactor);
+		}
+		else
+		{
+			float minHeight = seaLevel*0.8;
+			float maxHeight = seaLevel*0.9;
+			float scaleFactor = (length(gs_out.fragPos) - minHeight) / (maxHeight - minHeight);
+			scaleFactor = min(scaleFactor, 1);
+			scaleFactor = max(scaleFactor, 0);
+
+			texColor = mix(texture(grassTexture, gs_out.texcoord.xy), texture(sandTexture, gs_out.texcoord.xy), scaleFactor);
+		}
 
 		// Ambient
-		float ambientStrength = 0.05f;
+		float ambientStrength = 0.15f;
 		vec3 ambient = ambientStrength * texColor.xyz;
 
 		// Diffuse 
